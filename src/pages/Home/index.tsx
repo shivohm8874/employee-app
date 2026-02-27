@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+﻿import { useMemo, useRef, useState } from "react"
 import "./home.css"
 
 type Tip = {
@@ -73,31 +73,31 @@ const metrics = [
 function Icon({ name }: { name: string }) {
   switch (name) {
     case "heart":
-      return <span className="ico">♡</span>
+      return <span className="ico">o</span>
     case "brain":
-      return <span className="ico">◍</span>
+      return <span className="ico">*</span>
     case "test":
-      return <span className="ico">⌶</span>
+      return <span className="ico">T</span>
     case "pin":
-      return <span className="ico">⌖</span>
+      return <span className="ico">P</span>
     case "trophy":
-      return <span className="ico">⌂</span>
+      return <span className="ico">W</span>
     case "pill":
-      return <span className="ico">◜</span>
+      return <span className="ico">M</span>
     case "award":
-      return <span className="ico">◎</span>
+      return <span className="ico">A</span>
     case "moon":
-      return <span className="ico">☾</span>
+      return <span className="ico">N</span>
     case "bolt":
-      return <span className="ico">ϟ</span>
+      return <span className="ico">Z</span>
     case "thermo":
-      return <span className="ico">°</span>
+      return <span className="ico">D</span>
     case "pulse":
-      return <span className="ico">∿</span>
+      return <span className="ico">V</span>
     case "scale":
-      return <span className="ico">⚖</span>
+      return <span className="ico">S</span>
     default:
-      return <span className="ico">•</span>
+      return <span className="ico">.</span>
   }
 }
 
@@ -107,6 +107,9 @@ export default function Home() {
   const [tipIndex, setTipIndex] = useState(0)
   const [message, setMessage] = useState("")
   const [lastAction, setLastAction] = useState("Ready")
+  const [showAttachMenu, setShowAttachMenu] = useState(false)
+  const [fileAccept, setFileAccept] = useState("image/*,.pdf")
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const currentTip = tips[tipIndex]
   const score = useMemo(() => 92 + Math.min(selectedFeelings.length, 6), [selectedFeelings.length])
@@ -132,6 +135,23 @@ export default function Home() {
     setMessage("")
   }
 
+  function chooseAttachment(kind: "image" | "pdf") {
+    const accept = kind === "image" ? "image/*" : ".pdf,application/pdf"
+    setFileAccept(accept)
+    setShowAttachMenu(false)
+    fileInputRef.current?.click()
+  }
+
+  function onAttachmentSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files || files.length === 0) {
+      return
+    }
+    const picked = Array.from(files).map((file) => file.name).join(", ")
+    setLastAction(`Attached: ${picked}`)
+    e.target.value = ""
+  }
+
   return (
     <main className="home-page">
       <section className="home-shell">
@@ -145,16 +165,10 @@ export default function Home() {
               <p>Health Companion</p>
             </div>
           </div>
-          <button className="icon-btn" aria-label="menu">
-            ≡
-          </button>
+          <button className="icon-btn" aria-label="menu">Menu</button>
           <button className="sos-btn">SOS</button>
-          <button className="icon-btn" aria-label="notifications">
-            ◔
-          </button>
-          <button className="icon-btn" aria-label="profile">
-            ◌
-          </button>
+          <button className="icon-btn" aria-label="notifications">Bell</button>
+          <button className="icon-btn" aria-label="profile">You</button>
         </header>
 
         <nav className="tabbar">
@@ -181,8 +195,8 @@ export default function Home() {
             </div>
           </div>
           <div className="doctor-actions">
-            <button aria-label="call">⌕</button>
-            <button aria-label="video">◫</button>
+            <button aria-label="call">Call</button>
+            <button aria-label="video">Video</button>
           </div>
         </section>
 
@@ -229,12 +243,8 @@ export default function Home() {
         <section className="section">
           <h3 className="section-title">Daily Health Tips</h3>
           <article className="tip-card">
-            <button className="tip-arrow left" onClick={prevTip} aria-label="previous tip">
-              ‹
-            </button>
-            <button className="tip-arrow right" onClick={nextTip} aria-label="next tip">
-              ›
-            </button>
+            <button className="tip-arrow left" onClick={prevTip} aria-label="previous tip">&lt;</button>
+            <button className="tip-arrow right" onClick={nextTip} aria-label="next tip">&gt;</button>
             <div className="tip-header">
               <div className="tip-title-icon">
                 <span className="tip-big-icon">
@@ -305,9 +315,7 @@ export default function Home() {
         <section className="score-card">
           <div>
             <h3>Health Score</h3>
-            <p className="score">
-              {score}/100
-            </p>
+            <p className="score">{score}/100</p>
             <p>Excellent health indicators. Keep up the good work!</p>
             <small>{lastAction}</small>
           </div>
@@ -318,9 +326,16 @@ export default function Home() {
       </section>
 
       <footer className="composer">
-        <button className="round-btn" onClick={() => setLastAction("Attachment action")}>
-          +
+        <button
+          className="round-btn"
+          aria-label="attach files"
+          onClick={() => setShowAttachMenu(true)}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M16.5 6.5v9a4.5 4.5 0 1 1-9 0v-10a3 3 0 1 1 6 0v9a1.5 1.5 0 1 1-3 0V7.5" />
+          </svg>
         </button>
+
         <input
           type="text"
           placeholder="write something..."
@@ -332,10 +347,32 @@ export default function Home() {
             }
           }}
         />
-        <button className="mic-btn" onClick={sendMessage}>
-          ⌁
+
+        <button className="send-btn" aria-label="send message" onClick={sendMessage}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 11.5L21 3l-8.5 18-2.3-6.7L3 11.5z" />
+          </svg>
         </button>
       </footer>
+
+      <input
+        ref={fileInputRef}
+        className="hidden-file-input"
+        type="file"
+        accept={fileAccept}
+        onChange={onAttachmentSelected}
+      />
+
+      {showAttachMenu && (
+        <div className="attach-overlay" onClick={() => setShowAttachMenu(false)}>
+          <div className="attach-sheet" onClick={(e) => e.stopPropagation()}>
+            <h4>Add attachment</h4>
+            <button onClick={() => chooseAttachment("image")}>Image</button>
+            <button onClick={() => chooseAttachment("pdf")}>PDF</button>
+            <button className="cancel" onClick={() => setShowAttachMenu(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

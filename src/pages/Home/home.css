@@ -74,12 +74,13 @@
 }
 
 .icon-btn {
-  width: 32px;
+  width: 38px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: 10px;
   color: #2f3445;
   background: transparent;
-  font-size: 18px;
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .sos-btn {
@@ -178,7 +179,7 @@
 }
 
 .doctor-actions button {
-  width: 36px;
+  width: 52px;
   height: 36px;
   border: 0;
   border-radius: 10px;
@@ -591,43 +592,109 @@
   width: min(100vw, 430px);
   background: #f5f6f8;
   border-top: 1px solid #e1e5ed;
-  padding: 9px 12px calc(9px + env(safe-area-inset-bottom));
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 10px;
+  gap: 12px;
+  z-index: 30;
 }
 
 .round-btn,
-.mic-btn {
+.send-btn {
   border: 0;
-  border-radius: 12px;
+  border-radius: 14px;
   cursor: pointer;
+  display: grid;
+  place-items: center;
 }
 
 .round-btn {
-  width: 36px;
-  height: 36px;
+  width: 46px;
+  height: 46px;
   background: #e8ebf0;
-  color: #4f5667;
-  font-size: 22px;
 }
 
-.mic-btn {
-  width: 46px;
+.round-btn svg,
+.send-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.round-btn svg {
+  color: #4f5667;
+}
+
+.send-btn {
+  width: 54px;
+  height: 46px;
   background: #6b2a73;
+}
+
+.send-btn svg {
   color: #fff;
-  font-size: 16px;
 }
 
 .composer input {
   border: 0;
   background: #e8eaef;
-  border-radius: 12px;
-  padding: 0 14px;
-  font-size: 15px;
+  border-radius: 14px;
+  padding: 0 16px;
+  min-height: 46px;
+  font-size: 16px;
   color: #374053;
 }
 
 .composer input:focus {
   outline: 2px solid rgba(107, 42, 115, 0.25);
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.attach-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 23, 35, 0.4);
+  z-index: 40;
+  display: grid;
+  align-items: end;
+}
+
+.attach-sheet {
+  width: min(100vw, 430px);
+  margin: 0 auto;
+  background: #f7f8fb;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+  box-shadow: 0 -14px 40px rgba(21, 26, 42, 0.22);
+}
+
+.attach-sheet h4 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: #2d3548;
+}
+
+.attach-sheet button {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  min-height: 44px;
+  font-size: 15px;
+  margin-top: 8px;
+  background: #e8ecf3;
+  color: #2f374b;
+}
+
+.attach-sheet .cancel {
+  background: #f0dce8;
+  color: #5f2e6f;
+  font-weight: 600;
 }

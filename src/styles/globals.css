@@ -46,13 +46,17 @@ body,
   min-height: 100%;
 }
 
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
 body {
   margin: 0;
   font-family: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background: #dde1e8;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overscroll-behavior-y: none;
   touch-action: manipulation;
 }
 
