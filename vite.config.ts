@@ -16,7 +16,8 @@ export default defineConfig({
         scope: "/",
         theme_color: "#6d5cff",
         background_color: "#ffffff",
-        display: "standalone",
+        display: "fullscreen",
+        display_override: ["fullscreen", "standalone"],
         orientation: "portrait",
         icons: [
           { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },

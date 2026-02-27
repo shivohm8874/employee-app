@@ -39,6 +39,10 @@
 }
 
 /* ---------- Global Rules ---------- */
+:root {
+  --app-frame-width: 100vw;
+}
+
 html,
 body,
 #root {
@@ -69,11 +73,11 @@ h1, h2, h3, h4, h5, h6,
 }
 
 #root {
-  width: min(100vw, 430px);
-  max-width: 430px;
+  width: var(--app-frame-width);
+  max-width: 100%;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
-  margin: 0 auto;
+  margin: 0;
   background: #f3f4f6;
   position: relative;
   overflow: hidden;
@@ -141,14 +145,5 @@ select {
 
   .app-pressable {
     transition: none !important;
-  }
-}
-
-@media (min-width: 600px) {
-  #root {
-    border-radius: 22px;
-    margin: 12px auto;
-    min-height: calc(100dvh - 24px);
-    box-shadow: 0 18px 60px rgba(22, 28, 45, 0.18);
   }
 }

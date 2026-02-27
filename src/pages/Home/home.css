@@ -8,9 +8,9 @@
 
 .home-shell {
   width: 100%;
-  max-width: 430px;
+  max-width: var(--app-frame-width);
   margin: 0 auto;
-  padding: calc(62px + env(safe-area-inset-top)) 6px calc(98px + env(safe-area-inset-bottom));
+  padding: 0 6px 98px;
 }
 
 .topbar {
@@ -19,14 +19,14 @@
   align-items: center;
   gap: 8px;
   border-bottom: 1px solid #e2e6ee;
-  padding: calc(6px + env(safe-area-inset-top)) 12px 8px;
-  position: fixed;
+  padding: 6px 12px 8px;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
-  margin: 0 auto;
-  width: 100%;
-  max-width: 430px;
+  left: auto;
+  right: auto;
+  margin: 0;
+  width: auto;
+  max-width: none;
   min-height: 62px;
   z-index: 15;
   backdrop-filter: blur(12px);
@@ -617,11 +617,11 @@
   right: 0;
   margin: 0 auto;
   bottom: 0;
-  width: 100%;
-  max-width: 430px;
+  width: var(--app-frame-width);
+  max-width: 100%;
   background: #f5f6f8;
   border-top: 1px solid #e1e5ed;
-  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+  padding: 12px 14px 12px;
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: 12px;
@@ -701,7 +701,7 @@
   background: #f7f8fb;
   border-top-left-radius: 18px;
   border-top-right-radius: 18px;
-  padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+  padding: 14px;
   box-shadow: 0 -14px 40px rgba(21, 26, 42, 0.22);
 }
 
@@ -741,7 +741,7 @@
 .drawer {
   width: min(84vw, 320px);
   height: 100dvh;
-  padding: 18px 14px calc(14px + env(safe-area-inset-bottom));
+  padding: 18px 14px 14px;
   background: rgba(255, 255, 255, 0.32);
   backdrop-filter: blur(18px) saturate(150%);
   border-left: 1px solid rgba(255, 255, 255, 0.4);
