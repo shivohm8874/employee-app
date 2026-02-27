@@ -7,16 +7,24 @@ type Tip = {
   tags: string[]
 }
 
+type QuickAccessItem = {
+  title: string
+  subtitle: string
+  tone: "purple" | "blue" | "indigo" | "orange" | "green" | "gold"
+  badge?: string
+  icon: string
+}
+
 const tabs = ["Home", "Health", "AI Chat", "Stress Relief", "Wallet"] as const
 
-const quickAccess = [
+const quickAccess: QuickAccessItem[] = [
   { title: "Stress Relief", subtitle: "Chat for emotional support", tone: "purple", badge: "New", icon: "brain" },
   { title: "Lab Tests", subtitle: "Free Slots", tone: "blue", icon: "test" },
   { title: "OPD / Tele...", subtitle: "Unlimited Co...", tone: "indigo", icon: "pin" },
   { title: "Weekend Tasks", subtitle: "Earn coins", tone: "orange", icon: "trophy" },
   { title: "Pharmacy", subtitle: "Order medicines", tone: "green", icon: "pill" },
   { title: "Badges", subtitle: "View your ranking", tone: "gold", badge: "#42", icon: "award" },
-] as const
+]
 
 const feelings = [
   { id: "dizzy", title: "Feeling Dizzy", priority: "medium priority", tone: "light-blue", icon: "brain", level: "medium" },
