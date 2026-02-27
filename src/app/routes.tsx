@@ -5,11 +5,13 @@ import Company from "../pages/Company"
 import Login from "../pages/Login"
 import ForgotPassword from "../pages/ForgotPassword"
 import Home from "../pages/Home"
+import Health from "../pages/Health"
 
 export const router = createBrowserRouter([
   { path: "/", element: <Splash /> },
   { path: "/company", element: <Company /> },
   { path: "/login", element: <Login /> },
   { path: "/forgot", element: <ForgotPassword /> },
-  { path: "/home", element: <Home /> }
+  { path: "/home", element: <Home /> },
+  { path: "/health", element: <Health /> }
 ])

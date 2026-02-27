@@ -1,4 +1,5 @@
 ﻿import { useMemo, useRef, useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
 import "./home.css"
 
 type Tip = {
@@ -12,8 +13,27 @@ type QuickAccessItem = {
   subtitle: string
   tone: "purple" | "blue" | "indigo" | "orange" | "green" | "gold"
   badge?: string
-  icon: string
+  icon: IconName
 }
+
+type IconName =
+  | "heart"
+  | "brain"
+  | "test"
+  | "pin"
+  | "trophy"
+  | "pill"
+  | "award"
+  | "moon"
+  | "bolt"
+  | "thermo"
+  | "pulse"
+  | "scale"
+  | "menu"
+  | "bell"
+  | "user"
+  | "call"
+  | "video"
 
 const tabs = ["Home", "Health", "AI Chat", "Stress Relief", "Wallet"] as const
 
@@ -70,39 +90,57 @@ const metrics = [
   { title: "Weight", value: "165", unit: "lbs", status: "normal", age: "1 day ago", tone: "green", icon: "scale" },
 ] as const
 
-function Icon({ name }: { name: string }) {
+function AppIcon({ name, className }: { name: IconName; className?: string }) {
+  const common = { viewBox: "0 0 24 24", "aria-hidden": true }
+
   switch (name) {
     case "heart":
-      return <span className="ico">o</span>
+      return (
+        <svg {...common} className={className}><path d="M12 20s-6.7-4.3-9-8c-2-3.2.2-7 3.9-7 2 0 3.5 1 4.3 2.3C12 6 13.5 5 15.5 5c3.7 0 6 3.8 3.9 7-2.3 3.7-9 8-9 8z" /></svg>
+      )
     case "brain":
-      return <span className="ico">*</span>
+      return (
+        <svg {...common} className={className}><path d="M8 6a3 3 0 0 1 5-2 3.5 3.5 0 0 1 5 3v1a3 3 0 0 1 1 5v2a3 3 0 0 1-3 3h-1a3 3 0 0 1-6 0H8a3 3 0 0 1-3-3v-2a3 3 0 0 1 1-5V7a3 3 0 0 1 2-1z" /></svg>
+      )
     case "test":
-      return <span className="ico">T</span>
+      return <svg {...common} className={className}><path d="M9 3h6M10 3v5l-4 8a3 3 0 0 0 2.7 4h6.6A3 3 0 0 0 18 16l-4-8V3" /></svg>
     case "pin":
-      return <span className="ico">P</span>
+      return <svg {...common} className={className}><path d="M12 21s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12zm0-9.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" /></svg>
     case "trophy":
-      return <span className="ico">W</span>
+      return <svg {...common} className={className}><path d="M8 4h8v2a4 4 0 0 1-8 0V4zm-3 1h3v1a5 5 0 0 1-3 4V5zm14 0h-3v1a5 5 0 0 0 3 4V5zM12 12v4m-3 4h6" /></svg>
     case "pill":
-      return <span className="ico">M</span>
+      return <svg {...common} className={className}><path d="M8 16a4 4 0 1 1-6-5l6-6a4 4 0 0 1 6 5l-6 6zm4-8 6 6m-4-8 4-4a4 4 0 1 1 6 6l-4 4" /></svg>
     case "award":
-      return <span className="ico">A</span>
+      return <svg {...common} className={className}><path d="M12 3a5 5 0 0 1 5 5c0 2.8-2.2 5-5 5s-5-2.2-5-5a5 5 0 0 1 5-5zm-2 10 2 8 2-8" /></svg>
     case "moon":
-      return <span className="ico">N</span>
+      return <svg {...common} className={className}><path d="M15 3a8 8 0 1 0 6 13 7 7 0 1 1-6-13z" /></svg>
     case "bolt":
-      return <span className="ico">Z</span>
+      return <svg {...common} className={className}><path d="M13 2 5 13h5l-1 9 8-11h-5l1-9z" /></svg>
     case "thermo":
-      return <span className="ico">D</span>
+      return <svg {...common} className={className}><path d="M10 6a2 2 0 1 1 4 0v7.2a4 4 0 1 1-4 0V6z" /></svg>
     case "pulse":
-      return <span className="ico">V</span>
+      return <svg {...common} className={className}><path d="M2 12h4l2-4 3 8 2-4h9" /></svg>
     case "scale":
-      return <span className="ico">S</span>
+      return <svg {...common} className={className}><path d="M12 4v16m-6-2h12M6 8h12m-10 0-3 6h6l-3-6zm8 0-3 6h6l-3-6" /></svg>
+    case "menu":
+      return <svg {...common} className={className}><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+    case "bell":
+      return <svg {...common} className={className}><path d="M15 17H5l1.5-2v-3a4.5 4.5 0 0 1 9 0v3L17 17h-2zm-3 4a2 2 0 0 1-2-2h4a2 2 0 0 1-2 2z" /></svg>
+    case "user":
+      return <svg {...common} className={className}><path d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 8a7 7 0 0 1 14 0" /></svg>
+    case "call":
+      return <svg {...common} className={className}><path d="M6 3h4l1 4-2 2a13 13 0 0 0 6 6l2-2 4 1v4a2 2 0 0 1-2 2A15 15 0 0 1 4 5a2 2 0 0 1 2-2z" /></svg>
+    case "video":
+      return <svg {...common} className={className}><path d="M4 7h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4V7zm13 4 3-2v6l-3-2v-2z" /></svg>
     default:
-      return <span className="ico">.</span>
+      return <svg {...common} className={className}><circle cx="12" cy="12" r="2" /></svg>
   }
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Home")
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [showNav, setShowNav] = useState(false)
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([])
   const [tipIndex, setTipIndex] = useState(0)
   const [message, setMessage] = useState("")
@@ -113,6 +151,19 @@ export default function Home() {
 
   const currentTip = tips[tipIndex]
   const score = useMemo(() => 92 + Math.min(selectedFeelings.length, 6), [selectedFeelings.length])
+  const activeTab = location.pathname === "/health" ? "Health" : "Home"
+
+  function handleTabClick(tab: (typeof tabs)[number]) {
+    if (tab === "Home") {
+      navigate("/home")
+      return
+    }
+    if (tab === "Health") {
+      navigate("/health")
+      return
+    }
+    setLastAction(`${tab} coming soon`)
+  }
 
   function toggleFeeling(id: string) {
     setSelectedFeelings((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
@@ -153,37 +204,38 @@ export default function Home() {
   }
 
   return (
-    <main className="home-page">
+    <main className="home-page app-page-enter">
       <section className="home-shell">
-        <header className="topbar">
+        <header className="topbar app-fade-stagger">
           <div className="brand">
             <div className="brand-icon">
-              <Icon name="heart" />
+              <AppIcon name="heart" className="ico" />
             </div>
-            <div>
+            <div className="brand-copy">
               <h1>HCLTech</h1>
               <p>Health Companion</p>
             </div>
           </div>
-          <button className="icon-btn" aria-label="menu">Menu</button>
-          <button className="sos-btn">SOS</button>
-          <button className="icon-btn" aria-label="notifications">Bell</button>
-          <button className="icon-btn" aria-label="profile">You</button>
+          <button className="sos-btn app-pressable">SOS</button>
+          <button className="icon-btn app-pressable" aria-label="notifications"><AppIcon name="bell" className="ico" /></button>
+          <button className="icon-btn app-pressable" aria-label="menu" onClick={() => setShowNav(true)}>
+            <AppIcon name="menu" className="ico" />
+          </button>
         </header>
 
-        <nav className="tabbar">
+        <nav className="tabbar app-fade-stagger">
           {tabs.map((tab) => (
             <button
               key={tab}
-              className={`tab ${activeTab === tab ? "active" : ""}`}
-              onClick={() => setActiveTab(tab)}
+              className={`tab app-pressable ${activeTab === tab ? "active" : ""}`}
+              onClick={() => handleTabClick(tab)}
             >
               {tab}
             </button>
           ))}
         </nav>
 
-        <section className="doctor-card">
+        <section className="doctor-card app-fade-stagger">
           <div className="avatar">DR</div>
           <div className="doctor-copy">
             <h2>Dr. Riza Yuji</h2>
@@ -195,23 +247,23 @@ export default function Home() {
             </div>
           </div>
           <div className="doctor-actions">
-            <button aria-label="call">Call</button>
-            <button aria-label="video">Video</button>
+            <button className="app-pressable" aria-label="call"><AppIcon name="call" className="ico" /></button>
+            <button className="app-pressable" aria-label="video"><AppIcon name="video" className="ico" /></button>
           </div>
         </section>
 
-        <section className="section">
+        <section className="section app-fade-stagger">
           <h3 className="section-title">Quick Access</h3>
           <div className="quick-grid">
             {quickAccess.map((item) => (
               <button
                 key={item.title}
-                className={`quick-card ${item.tone}`}
+                className={`quick-card app-pressable ${item.tone}`}
                 onClick={() => setLastAction(`${item.title} opened`)}
               >
                 {item.badge && <span className="badge">{item.badge}</span>}
                 <span className="quick-icon">
-                  <Icon name={item.icon} />
+                  <AppIcon name={item.icon} className="ico" />
                 </span>
                 <h4>{item.title}</h4>
                 <p>{item.subtitle}</p>
@@ -220,18 +272,18 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="section">
+        <section className="section app-fade-stagger">
           <h3 className="section-title">How are you feeling today?</h3>
           <p className="section-sub">Select your symptoms for AI analysis</p>
           <div className="feeling-grid">
             {feelings.map((item) => (
               <button
                 key={item.id}
-                className={`feeling-card ${item.tone} ${selectedFeelings.includes(item.id) ? "selected" : ""}`}
+                className={`feeling-card app-pressable ${item.tone} ${selectedFeelings.includes(item.id) ? "selected" : ""}`}
                 onClick={() => toggleFeeling(item.id)}
               >
                 <span className="feeling-icon">
-                  <Icon name={item.icon} />
+                  <AppIcon name={item.icon} className="ico" />
                 </span>
                 <h4>{item.title}</h4>
                 <span className={`priority ${item.level}`}>{item.priority}</span>
@@ -240,15 +292,15 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="section">
+        <section className="section app-fade-stagger">
           <h3 className="section-title">Daily Health Tips</h3>
           <article className="tip-card">
-            <button className="tip-arrow left" onClick={prevTip} aria-label="previous tip">&lt;</button>
-            <button className="tip-arrow right" onClick={nextTip} aria-label="next tip">&gt;</button>
+            <button className="tip-arrow left app-pressable" onClick={prevTip} aria-label="previous tip">&lt;</button>
+            <button className="tip-arrow right app-pressable" onClick={nextTip} aria-label="next tip">&gt;</button>
             <div className="tip-header">
               <div className="tip-title-icon">
                 <span className="tip-big-icon">
-                  <Icon name="pin" />
+                  <AppIcon name="pin" className="ico" />
                 </span>
                 <div>
                   <h4>{currentTip.title}</h4>
@@ -268,7 +320,7 @@ export default function Home() {
               {tips.map((_, index) => (
                 <button
                   key={index}
-                  className={`dot ${tipIndex === index ? "active" : ""}`}
+                  className={`dot app-pressable ${tipIndex === index ? "active" : ""}`}
                   onClick={() => setTipIndex(index)}
                   aria-label={`tip ${index + 1}`}
                 />
@@ -277,19 +329,19 @@ export default function Home() {
           </article>
         </section>
 
-        <section className="section">
+        <section className="section app-fade-stagger">
           <h3 className="section-title">Health Metrics</h3>
           <p className="section-sub">Track your vital signs and health data</p>
           <div className="metric-grid">
             {metrics.map((item) => (
               <button
                 key={item.title}
-                className={`metric-card ${item.tone}`}
+                className={`metric-card app-pressable ${item.tone}`}
                 onClick={() => setLastAction(`${item.title} details viewed`)}
               >
                 <div className="metric-top">
                   <span className="metric-icon">
-                    <Icon name={item.icon} />
+                    <AppIcon name={item.icon} className="ico" />
                   </span>
                   <span className="status">{item.status}</span>
                 </div>
@@ -312,7 +364,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="score-card">
+        <section className="score-card app-fade-stagger">
           <div>
             <h3>Health Score</h3>
             <p className="score">{score}/100</p>
@@ -320,14 +372,14 @@ export default function Home() {
             <small>{lastAction}</small>
           </div>
           <div className="score-icon">
-            <Icon name="heart" />
+            <AppIcon name="heart" className="ico" />
           </div>
         </section>
       </section>
 
-      <footer className="composer">
+      <footer className="composer app-fade-stagger">
         <button
-          className="round-btn"
+          className="round-btn app-pressable"
           aria-label="attach files"
           onClick={() => setShowAttachMenu(true)}
         >
@@ -348,7 +400,7 @@ export default function Home() {
           }}
         />
 
-        <button className="send-btn" aria-label="send message" onClick={sendMessage}>
+        <button className="send-btn app-pressable" aria-label="send message" onClick={sendMessage}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M3 11.5L21 3l-8.5 18-2.3-6.7L3 11.5z" />
           </svg>
@@ -365,12 +417,32 @@ export default function Home() {
 
       {showAttachMenu && (
         <div className="attach-overlay" onClick={() => setShowAttachMenu(false)}>
-          <div className="attach-sheet" onClick={(e) => e.stopPropagation()}>
+          <div className="attach-sheet app-page-enter" onClick={(e) => e.stopPropagation()}>
             <h4>Add attachment</h4>
-            <button onClick={() => chooseAttachment("image")}>Image</button>
-            <button onClick={() => chooseAttachment("pdf")}>PDF</button>
-            <button className="cancel" onClick={() => setShowAttachMenu(false)}>Cancel</button>
+            <button className="app-pressable" onClick={() => chooseAttachment("image")}>Image</button>
+            <button className="app-pressable" onClick={() => chooseAttachment("pdf")}>PDF</button>
+            <button className="cancel app-pressable" onClick={() => setShowAttachMenu(false)}>Cancel</button>
           </div>
+        </div>
+      )}
+
+      {showNav && (
+        <div className="drawer-overlay" onClick={() => setShowNav(false)}>
+          <aside className="drawer app-page-enter" onClick={(e) => e.stopPropagation()}>
+            <div className="drawer-head">
+              <div>
+                <h4>Quick Menu</h4>
+                <p>Navigate your app</p>
+              </div>
+              <button className="icon-btn app-pressable" onClick={() => setShowNav(false)} aria-label="close menu">
+                x
+              </button>
+            </div>
+            <button className="drawer-link app-pressable" onClick={() => { setShowNav(false); navigate("/home") }}>Home</button>
+            <button className="drawer-link app-pressable" onClick={() => { setShowNav(false); navigate("/health") }}>Health</button>
+            <button className="drawer-link app-pressable" onClick={() => { setShowNav(false); setLastAction("AI Chat coming soon") }}>AI Chat</button>
+            <button className="drawer-link app-pressable" onClick={() => { setShowNav(false); setLastAction("Profile coming soon") }}>Profile</button>
+          </aside>
         </div>
       )}
     </main>

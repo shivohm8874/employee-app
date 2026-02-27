@@ -1,4 +1,4 @@
-import { useState } from "react"
+﻿import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import "./company.css"
 
@@ -12,7 +12,7 @@ export default function Company() {
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value
       .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "") // alphanumeric only
+      .replace(/[^A-Z0-9]/g, "")
 
     setCode(value)
     setError("")
@@ -26,26 +26,21 @@ export default function Company() {
 
     setLoading(true)
 
-    // simulate backend validation
     setTimeout(() => {
       setLoading(false)
-      navigate("/login") // NEXT SCREEN (you can change later)
+      navigate("/login")
     }, 1500)
   }
 
   return (
-    <div className="company-screen">
-      <div className="company-card animate-in">
-        <h1 className="title">
-          Hey <span className="wave">👋</span>
-        </h1>
+    <div className="company-screen app-page-enter">
+      <div className="company-card animate-in app-fade-stagger">
+        <h1 className="title">Hey <span className="wave">*</span></h1>
 
-        <p className="subtitle">
-          Sign in to continue your health journey
-        </p>
+        <p className="subtitle">Sign in to continue your health journey</p>
 
         <label className="label">
-          Company Code <span className="hint">(Eg – ASTI2009025)</span>
+          Company Code <span className="hint">(Eg - ASTI2009025)</span>
         </label>
 
         <div className={`input-wrapper ${error ? "error" : ""}`}>
@@ -61,16 +56,16 @@ export default function Company() {
         {error && <p className="error-text">{error}</p>}
 
         <button
-          className={`continue-btn ${loading ? "loading" : ""}`}
+          className={`continue-btn app-pressable ${loading ? "loading" : ""}`}
           onClick={handleContinue}
           disabled={loading}
         >
-          {loading ? <span className="loader"></span> : "Continue →"}
+          {loading ? <span className="loader"></span> : "Continue ->"}
         </button>
       </div>
 
       <p className="terms">
-        By signing in, you agree to our <span>Terms</span> & <span>Privacy</span>
+        By signing in, you agree to our <span>Terms</span> and <span>Privacy</span>
       </p>
     </div>
   )

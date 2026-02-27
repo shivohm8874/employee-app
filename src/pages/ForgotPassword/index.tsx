@@ -1,6 +1,22 @@
-import { useState } from "react"
+﻿import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import "./forgot.css"
+
+function MailIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="ui-icon">
+      <path d="M3 6h18v12H3V6zm1 1 8 6 8-6" />
+    </svg>
+  )
+}
+
+function BuildingIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="ui-icon">
+      <path d="M4 20V6l8-3 8 3v14H4zm4-9h2m4 0h2m-6 4h2m4 0h2" />
+    </svg>
+  )
+}
 
 export default function ForgotPassword() {
   const navigate = useNavigate()
@@ -26,7 +42,6 @@ export default function ForgotPassword() {
 
     setLoading(true)
 
-    // mock reset request
     setTimeout(() => {
       setLoading(false)
       navigate("/login")
@@ -34,21 +49,19 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="forgot-screen">
-      <div className="brand">
+    <div className="forgot-screen app-page-enter">
+      <div className="brand app-fade-stagger">
         <h1>HCLTech</h1>
         <p>Your Health Companion</p>
       </div>
 
-      <div className="forgot-card animate-in">
+      <div className="forgot-card animate-in app-fade-stagger">
         <h2 className="title">Forgot Password?</h2>
-        <p className="subtitle">
-          Reset your password from here
-        </p>
+        <p className="subtitle">Reset your password from here</p>
 
         <label>Email Address</label>
         <div className="input-wrapper">
-          <span className="icon">✉️</span>
+          <span className="icon"><MailIcon /></span>
           <input
             type="email"
             placeholder="Enter your email"
@@ -59,10 +72,10 @@ export default function ForgotPassword() {
         </div>
 
         <label>
-          Company Code <span className="hint">(Eg – ASTI2009025)</span>
+          Company Code <span className="hint">(Eg - ASTI2009025)</span>
         </label>
         <div className="input-wrapper">
-          <span className="icon">🏢</span>
+          <span className="icon"><BuildingIcon /></span>
           <input
             type="text"
             placeholder="ENTER YOUR COMPANY CODE"
@@ -75,11 +88,11 @@ export default function ForgotPassword() {
         {error && <p className="error-text">{error}</p>}
 
         <button
-          className={`continue-btn ${loading ? "loading" : ""}`}
+          className={`continue-btn app-pressable ${loading ? "loading" : ""}`}
           onClick={handleSubmit}
           disabled={loading}
         >
-          {loading ? <span className="loader"></span> : "Continue →"}
+          {loading ? <span className="loader"></span> : "Continue ->"}
         </button>
 
         <p className="back" onClick={() => navigate("/login")}>
@@ -88,8 +101,7 @@ export default function ForgotPassword() {
       </div>
 
       <p className="terms">
-        By signing in, you agree to our <span>Terms of Service</span> and{" "}
-        <span>Privacy Policy</span>
+        By signing in, you agree to our <span>Terms of Service</span> and <span>Privacy Policy</span>
       </p>
     </div>
   )

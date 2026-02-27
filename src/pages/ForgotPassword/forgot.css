@@ -90,6 +90,21 @@ label {
   font-family: "Manrope", sans-serif;
 }
 
+.ui-icon {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+}
+
+.ui-icon path,
+.ui-icon circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .error-text {
   margin-top: 8px;
   font-size: 12px;
