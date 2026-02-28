@@ -76,7 +76,7 @@ export default function Login() {
 
     setTimeout(() => {
       setLoading(false)
-      navigate("/home")
+      navigate("/assessment")
     }, 1000)
   }
 

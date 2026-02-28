@@ -6,6 +6,7 @@ import Login from "../pages/Login"
 import ForgotPassword from "../pages/ForgotPassword"
 import Home from "../pages/Home"
 import Health from "../pages/Health"
+import Assessment from "../pages/assessment"
 import Terms from "../pages/Legal/Terms"
 import Privacy from "../pages/Legal/Privacy"
 import RouteTransitionLayout from "./RouteTransitionLayout"
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
       { path: "company", element: <Company /> },
       { path: "login", element: <Login /> },
       { path: "forgot", element: <ForgotPassword /> },
+      { path: "assessment", element: <Assessment /> },
       { path: "home", element: <Home /> },
       { path: "health", element: <Health /> },
       { path: "terms", element: <Terms /> },
