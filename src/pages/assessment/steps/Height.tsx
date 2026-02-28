@@ -1,21 +1,30 @@
-import { useState } from "react"
+import { useState, type CSSProperties } from "react"
+import { FiMinus, FiPlus } from "react-icons/fi"
 import AssessmentLayout from "../layout"
 
 type Props = {
   onNext: () => void
 }
 
+const MIN_HEIGHT = 120
+const MAX_HEIGHT = 220
+
+function clampHeight(value: number) {
+  return Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, value))
+}
+
 export default function Height({ onNext }: Props) {
   const [height, setHeight] = useState(170)
+  const progress = ((height - MIN_HEIGHT) / (MAX_HEIGHT - MIN_HEIGHT)) * 100
+
+  const sliderStyle = {
+    "--slider-fill": `${progress}%`,
+  } as CSSProperties
 
   return (
-    <AssessmentLayout
-      step={2}
-      totalSteps={7}
-      onNext={onNext}
-    >
+    <AssessmentLayout step={2} totalSteps={7} onNext={onNext}>
       <div className="step-container animate-in">
-        <h1>What’s your height?</h1>
+        <h1>What's your height?</h1>
         <p>This helps us understand your body composition</p>
 
         <div className="value-display">
@@ -23,18 +32,30 @@ export default function Height({ onNext }: Props) {
           <span className="unit">cm</span>
         </div>
 
-        <input
-          type="range"
-          min={120}
-          max={220}
-          value={height}
-          onChange={(e) => setHeight(Number(e.target.value))}
-          className="slider"
-        />
+        <div className="slider-actions">
+          <button className="slider-stepper app-pressable" type="button" onClick={() => setHeight((v) => clampHeight(v - 1))} aria-label="decrease height">
+            <FiMinus />
+          </button>
+          <input
+            type="range"
+            min={MIN_HEIGHT}
+            max={MAX_HEIGHT}
+            value={height}
+            onChange={(e) => setHeight(Number(e.target.value))}
+            className="slider"
+            style={sliderStyle}
+          />
+          <button className="slider-stepper app-pressable" type="button" onClick={() => setHeight((v) => clampHeight(v + 1))} aria-label="increase height">
+            <FiPlus />
+          </button>
+        </div>
 
-        <p className="helper">
-          You can adjust this anytime later
-        </p>
+        <div className="slider-scale" aria-hidden="true">
+          <span>{MIN_HEIGHT} cm</span>
+          <span>{MAX_HEIGHT} cm</span>
+        </div>
+
+        <p className="helper">You can adjust this anytime later</p>
       </div>
     </AssessmentLayout>
   )

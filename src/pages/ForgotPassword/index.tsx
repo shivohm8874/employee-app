@@ -1,21 +1,10 @@
-﻿import { useState } from "react"
+import { useState } from "react"
+import { FiArrowLeft, FiBuilding, FiMail, FiShield } from "react-icons/fi"
 import { Link, useNavigate } from "react-router-dom"
 import "./forgot.css"
 
-function MailIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="ui-icon">
-      <path d="M3 6h18v12H3V6zm1 1 8 6 8-6" />
-    </svg>
-  )
-}
-
-function BuildingIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="ui-icon">
-      <path d="M4 20V6l8-3 8 3v14H4zm4-9h2m4 0h2m-6 4h2m4 0h2" />
-    </svg>
-  )
+function isValidCompanyCode(value: string) {
+  return /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{12}$/.test(value)
 }
 
 export default function ForgotPassword() {
@@ -27,9 +16,7 @@ export default function ForgotPassword() {
   const [error, setError] = useState("")
 
   function handleCompanyCode(e: React.ChangeEvent<HTMLInputElement>) {
-    const value = e.target.value
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "")
+    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12)
     setCompanyCode(value)
     setError("")
   }
@@ -40,72 +27,78 @@ export default function ForgotPassword() {
       return
     }
 
+    if (!isValidCompanyCode(companyCode)) {
+      setError("Company code must be 12 characters with letters and numbers")
+      return
+    }
+
     setLoading(true)
 
     setTimeout(() => {
       setLoading(false)
       navigate("/login")
-    }, 1500)
+    }, 1000)
   }
 
   return (
     <div className="forgot-screen app-page-enter">
-      <div className="brand app-fade-stagger">
-        <h1>HCLTech</h1>
-        <p>Your Health Companion</p>
-      </div>
+      <section className="forgot-shell">
+        <header className="forgot-hero app-fade-stagger">
+          <span className="forgot-chip">
+            <FiShield aria-hidden="true" /> Account Recovery
+          </span>
+          <h1>Reset Access</h1>
+          <p>Verify your company details to continue</p>
+        </header>
 
-      <div className="forgot-card animate-in app-fade-stagger">
-        <h2 className="title">Forgot Password?</h2>
-        <p className="subtitle">Reset your password from here</p>
+        <div className="forgot-card animate-in app-fade-stagger">
+          <label htmlFor="forgot-email">Work Email</label>
+          <div className="forgot-input-wrapper">
+            <span className="forgot-icon"><FiMail aria-hidden="true" /></span>
+            <input
+              id="forgot-email"
+              type="email"
+              placeholder="Enter your work email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+            />
+          </div>
 
-        <label htmlFor="forgot-email">Email Address</label>
-        <div className="input-wrapper">
-          <span className="icon"><MailIcon /></span>
-          <input
-            id="forgot-email"
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+          <label htmlFor="forgot-company">Company Code</label>
+          <div className="forgot-input-wrapper">
+            <span className="forgot-icon"><FiBuilding aria-hidden="true" /></span>
+            <input
+              id="forgot-company"
+              type="text"
+              placeholder="ENTER 12-CHARACTER CODE"
+              value={companyCode}
+              onChange={handleCompanyCode}
+              disabled={loading}
+              maxLength={12}
+            />
+          </div>
+
+          {error && <p className="forgot-error-text">{error}</p>}
+
+          <button
+            className={`forgot-continue-btn app-pressable ${loading ? "loading" : ""}`}
+            onClick={handleSubmit}
             disabled={loading}
-          />
+            type="button"
+          >
+            {loading ? <span className="loader"></span> : "Reset Password"}
+          </button>
+
+          <button className="forgot-back app-pressable" onClick={() => navigate("/login")} type="button">
+            <FiArrowLeft aria-hidden="true" /> Back to login
+          </button>
         </div>
 
-        <label htmlFor="forgot-company">
-          Company Code <span className="hint">(Eg - ASTI2009025)</span>
-        </label>
-        <div className="input-wrapper">
-          <span className="icon"><BuildingIcon /></span>
-          <input
-            id="forgot-company"
-            type="text"
-            placeholder="ENTER YOUR COMPANY CODE"
-            value={companyCode}
-            onChange={handleCompanyCode}
-            disabled={loading}
-          />
-        </div>
-
-        {error && <p className="error-text">{error}</p>}
-
-        <button
-          className={`continue-btn app-pressable ${loading ? "loading" : ""}`}
-          onClick={handleSubmit}
-          disabled={loading}
-          type="button"
-        >
-          {loading ? <span className="loader"></span> : "Continue ->"}
-        </button>
-
-        <button className="back app-pressable" onClick={() => navigate("/login")} type="button">
-          back to login?
-        </button>
-      </div>
-
-      <p className="terms">
-        By signing in, you agree to our <Link to="/terms">Terms of Service</Link> and <Link to="/privacy">Privacy Policy</Link>
-      </p>
+        <p className="forgot-terms">
+          By signing in, you agree to our <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>
+        </p>
+      </section>
     </div>
   )
 }

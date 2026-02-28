@@ -1,21 +1,30 @@
-import { useState } from "react"
+import { useState, type CSSProperties } from "react"
+import { FiMinus, FiPlus } from "react-icons/fi"
 import AssessmentLayout from "../layout"
 
 type Props = {
   onNext: () => void
 }
 
+const MIN_WEIGHT = 35
+const MAX_WEIGHT = 180
+
+function clampWeight(value: number) {
+  return Math.min(MAX_WEIGHT, Math.max(MIN_WEIGHT, value))
+}
+
 export default function Weight({ onNext }: Props) {
   const [weight, setWeight] = useState(70)
+  const progress = ((weight - MIN_WEIGHT) / (MAX_WEIGHT - MIN_WEIGHT)) * 100
+
+  const sliderStyle = {
+    "--slider-fill": `${progress}%`,
+  } as CSSProperties
 
   return (
-    <AssessmentLayout
-      step={3}
-      totalSteps={7}
-      onNext={onNext}
-    >
+    <AssessmentLayout step={3} totalSteps={7} onNext={onNext}>
       <div className="step-container animate-in">
-        <h1>What’s your weight?</h1>
+        <h1>What's your weight?</h1>
         <p>This helps us calculate your health baseline</p>
 
         <div className="value-display">
@@ -23,18 +32,30 @@ export default function Weight({ onNext }: Props) {
           <span className="unit">kg</span>
         </div>
 
-        <input
-          type="range"
-          min={35}
-          max={180}
-          value={weight}
-          onChange={(e) => setWeight(Number(e.target.value))}
-          className="slider"
-        />
+        <div className="slider-actions">
+          <button className="slider-stepper app-pressable" type="button" onClick={() => setWeight((v) => clampWeight(v - 1))} aria-label="decrease weight">
+            <FiMinus />
+          </button>
+          <input
+            type="range"
+            min={MIN_WEIGHT}
+            max={MAX_WEIGHT}
+            value={weight}
+            onChange={(e) => setWeight(Number(e.target.value))}
+            className="slider"
+            style={sliderStyle}
+          />
+          <button className="slider-stepper app-pressable" type="button" onClick={() => setWeight((v) => clampWeight(v + 1))} aria-label="increase weight">
+            <FiPlus />
+          </button>
+        </div>
 
-        <p className="helper">
-          This is only used for personalised insights
-        </p>
+        <div className="slider-scale" aria-hidden="true">
+          <span>{MIN_WEIGHT} kg</span>
+          <span>{MAX_WEIGHT} kg</span>
+        </div>
+
+        <p className="helper">This is only used for personalised insights</p>
       </div>
     </AssessmentLayout>
   )
