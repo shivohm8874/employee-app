@@ -4,7 +4,6 @@ import {
   FiActivity,
   FiArrowLeft,
   FiCheckCircle,
-  FiClock,
   FiHeart,
   FiLoader,
   FiMapPin,
@@ -364,4 +363,3 @@ export default function TeleConsultation() {
     </main>
   )
 }
-
