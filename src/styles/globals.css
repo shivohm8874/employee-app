@@ -1,0 +1,222 @@
+/* ---------- Satoshi ---------- */
+@font-face {
+  font-family: "Satoshi";
+  src: url("../assets/fonts/Satoshi-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("../assets/fonts/Satoshi-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("../assets/fonts/Satoshi-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* ---------- Manrope ---------- */
+@font-face {
+  font-family: "Manrope";
+  src: url("../assets/fonts/Manrope-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Manrope";
+  src: url("../assets/fonts/Manrope-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Manrope";
+  src: url("../assets/fonts/Manrope-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-display: swap;
+}
+
+/* ---------- Global Rules ---------- */
+:root {
+  --app-frame-width: 100vw;
+  --bg-page: #f5f7fb;
+  --bg-card: #ffffff;
+  --text-primary: #1f2940;
+  --text-secondary: #657089;
+  --brand-primary: #6b2d70;
+  --brand-soft: #ece6f3;
+  --line-soft: #dce3ef;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+}
+
+html,
+body {
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1, h2, h3, h4, h5, h6,
+.title {
+  font-family: "Satoshi", system-ui, sans-serif;
+}
+
+#root {
+  width: var(--app-frame-width);
+  max-width: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  margin: 0;
+  background: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+*:focus-visible {
+  outline: 2px solid #6d2a73;
+  outline-offset: 2px;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+[role="button"],
+a,
+input,
+select,
+textarea {
+  min-height: 44px;
+}
+
+button,
+a {
+  touch-action: manipulation;
+}
+
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
+.app-page-enter {
+  animation: none;
+  will-change: opacity;
+}
+
+.app-content-slide {
+  animation: appSlideIn 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.app-content-slide-rtl {
+  animation: appSlideInRtl 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.app-fade-stagger {
+  animation: appFadeIn 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.app-pressable {
+  transition: transform 140ms ease, opacity 140ms ease, box-shadow 140ms ease;
+}
+
+.app-pressable:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+@keyframes appPageIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes appSlideIn {
+  from {
+    opacity: 1;
+    transform: translate3d(20px, 0, 0);
+  }
+  68% {
+    opacity: 1;
+    transform: translate3d(-2px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes appFadeIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes appSlideInRtl {
+  from {
+    transform: translate3d(26px, 0, 0);
+  }
+  72% {
+    transform: translate3d(-2px, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-page-enter,
+  .app-content-slide-rtl,
+  .app-content-slide,
+  .app-fade-stagger {
+    animation: none !important;
+  }
+
+  .app-pressable {
+    transition: none !important;
+  }
+}

@@ -1,0 +1,257 @@
+.symptom-analyser-page {
+  height: 100dvh;
+  background: #f4f6fb;
+  color: #1d2434;
+  font-family: "Manrope", sans-serif;
+  overflow: hidden;
+}
+
+.symptom-analyser-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: min(100%, var(--app-frame-width));
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e3e7f2;
+  background: rgba(244, 246, 251, 0.96);
+  backdrop-filter: blur(10px);
+}
+
+.analyser-back {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid #d5dceb;
+  background: #eef2fa;
+  color: #273147;
+  display: grid;
+  place-items: center;
+}
+
+.symptom-analyser-header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-family: "Satoshi", sans-serif;
+}
+
+.symptom-analyser-header p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #5f6779;
+}
+
+.symptom-analyser-content {
+  height: 100%;
+  display: grid;
+  align-items: center;
+  padding: 84px 14px calc(86px + env(safe-area-inset-bottom));
+}
+
+.analyser-step-card {
+  border: 1px solid #dce2ee;
+  border-radius: 18px;
+  background: #fff;
+  padding: 16px;
+}
+
+.analyser-step-card h2 {
+  margin: 0;
+  font-size: 1.32rem;
+  font-family: "Satoshi", sans-serif;
+}
+
+.analyser-step-card > p {
+  margin: 6px 0 14px;
+  color: #5d667c;
+  font-size: 0.92rem;
+}
+
+.step-indicator {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.step-indicator span {
+  height: 6px;
+  border-radius: 999px;
+  background: #e8edf7;
+}
+
+.step-indicator span.active {
+  background: linear-gradient(120deg, #6d2fe6, #7f4fe0);
+}
+
+.step-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.step-grid.two-col {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.step-chip {
+  min-height: 48px;
+  border: 1px solid #d8dfeb;
+  border-radius: 12px;
+  background: #f8faff;
+  color: #33415d;
+  font-size: 0.94rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+}
+
+.step-chip:active {
+  border-color: #6d2fe6;
+  background: #efe8ff;
+  color: #4f22ad;
+}
+
+.severity-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.severity-card {
+  min-height: 62px;
+  border-radius: 12px;
+  border: 1px solid #d8dfeb;
+  background: #f8faff;
+  display: grid;
+  justify-items: start;
+  align-content: center;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.severity-card strong {
+  font-size: 0.98rem;
+  font-family: "Satoshi", sans-serif;
+}
+
+.severity-card span {
+  font-size: 0.82rem;
+  color: #5d667c;
+}
+
+.severity-card.low:active {
+  border-color: #25a561;
+  background: #ecfbf3;
+}
+
+.severity-card.moderate:active {
+  border-color: #c89413;
+  background: #fff8e4;
+}
+
+.severity-card.high:active {
+  border-color: #cd3048;
+  background: #fff0f3;
+}
+
+.routing-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.routing-stack article {
+  border-radius: 12px;
+  border: 1px solid #e1e6f2;
+  background: #f8faff;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.routing-stack span {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #ede7ff;
+  color: #6630d9;
+  display: grid;
+  place-items: center;
+}
+
+.routing-stack h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #53607a;
+}
+
+.routing-stack p {
+  margin: 2px 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.routing-loader {
+  margin-top: 12px;
+  min-height: 44px;
+  border-radius: 12px;
+  background: #eef2ff;
+  color: #4f22ad;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.routing-loader svg {
+  animation: spin 900ms linear infinite;
+}
+
+.symptom-analyser-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0 auto;
+  width: min(100%, var(--app-frame-width));
+  z-index: 20;
+  padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid #dde4f0;
+  background: rgba(244, 246, 251, 0.97);
+  backdrop-filter: blur(10px);
+}
+
+.analyser-secondary {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 12px;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  background: #e9ecf5;
+  color: #3f4a62;
+}
+
+@media (max-width: 420px) {
+  .step-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

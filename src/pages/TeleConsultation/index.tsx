@@ -1,0 +1,634 @@
+import { useEffect, useMemo, useRef, useState } from "react"
+import {
+  FiArrowUpRight,
+  FiArrowLeft,
+  FiCheckCircle,
+  FiMapPin,
+  FiMic,
+  FiMicOff,
+  FiPhoneOff,
+  FiSearch,
+  FiStar,
+  FiVideo,
+  FiVideoOff,
+} from "react-icons/fi"
+import { useLocation, useNavigate } from "react-router-dom"
+import { goBackOrFallback } from "../../utils/navigation"
+import { playAppSound } from "../../utils/sound"
+import "./teleconsultation.css"
+
+type Doctor = {
+  id: string
+  name: string
+  specialty: "Internal Medicine" | "Cardiology" | "Dermatology" | "Pulmonology"
+  rating: number
+  reviews: number
+  distance: string
+  eta: string
+  fee: number
+  avatar: string
+}
+
+type DiscoverFilterKey = "all" | "general" | "heart" | "skin" | "lungs" | "kidney" | "bones" | "child"
+
+type JourneyStep = "options" | "ride" | "video"
+type ConsultMode = "tele" | "opd"
+type CallState = "ready" | "connecting" | "live" | "ended"
+type MediaPermission = "idle" | "granted" | "denied"
+type TeleNavState = {
+  fromAiAnalyser?: boolean
+  preselectedSpecialty?: Doctor["specialty"]
+  preselectedFilterKey?: DiscoverFilterKey
+  selectedSymptoms?: string[]
+  analysisQuery?: string
+  recommendedMode?: ConsultMode
+  selectedDoctorId?: string
+  startRide?: boolean
+  startVideo?: boolean
+}
+
+const doctors: Doctor[] = [
+  {
+    id: "riza",
+    name: "Dr. Riza Yuhi",
+    specialty: "Internal Medicine",
+    rating: 4.9,
+    reviews: 85,
+    distance: "2.5 km away",
+    eta: "15 mins",
+    fee: 25,
+    avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=160&q=80",
+  },
+  {
+    id: "sarah",
+    name: "Dr. Sarah Chen",
+    specialty: "Cardiology",
+    rating: 4.8,
+    reviews: 85,
+    distance: "3.2 km away",
+    eta: "20 mins",
+    fee: 35,
+    avatar: "https://images.unsplash.com/photo-1594824475317-6f6d4f3a04c9?auto=format&fit=crop&w=160&q=80",
+  },
+  {
+    id: "michael",
+    name: "Dr. Michael Park",
+    specialty: "Dermatology",
+    rating: 4.7,
+    reviews: 85,
+    distance: "1.8 km away",
+    eta: "12 mins",
+    fee: 30,
+    avatar: "https://images.unsplash.com/photo-1614436163996-25cee5f54290?auto=format&fit=crop&w=160&q=80",
+  },
+  {
+    id: "aarav",
+    name: "Dr. Aarav Patel",
+    specialty: "Pulmonology",
+    rating: 4.8,
+    reviews: 85,
+    distance: "2.9 km away",
+    eta: "18 mins",
+    fee: 32,
+    avatar: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&w=160&q=80",
+  },
+]
+
+const discoverFilters: Array<{
+  key: DiscoverFilterKey
+  label: string
+  specialties: "all" | Doctor["specialty"][]
+}> = [
+  { key: "all", label: "All", specialties: "all" },
+  { key: "general", label: "General Medicine", specialties: ["Internal Medicine"] },
+  { key: "heart", label: "Heart", specialties: ["Cardiology"] },
+  { key: "skin", label: "Skin", specialties: ["Dermatology"] },
+  { key: "lungs", label: "Lungs", specialties: ["Pulmonology"] },
+  { key: "kidney", label: "Kidney", specialties: ["Internal Medicine"] },
+  { key: "bones", label: "Bones & Joints", specialties: ["Internal Medicine"] },
+  { key: "child", label: "Child Care", specialties: ["Internal Medicine"] },
+]
+
+function filterKeyFromSpecialty(specialty: Doctor["specialty"]): DiscoverFilterKey {
+  if (specialty === "Cardiology") return "heart"
+  if (specialty === "Dermatology") return "skin"
+  if (specialty === "Pulmonology") return "lungs"
+  return "general"
+}
+
+export default function TeleConsultation() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const incomingState = location.state as TeleNavState | undefined
+  const [step, setStep] = useState<JourneyStep>(() => {
+    if (incomingState?.startRide) return "ride"
+    return "options"
+  })
+  const [query, setQuery] = useState("")
+  const [analysisQuery, setAnalysisQuery] = useState(() => incomingState?.analysisQuery ?? "")
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(() => incomingState?.selectedSymptoms ?? [])
+  const [activeFilterKey, setActiveFilterKey] = useState<DiscoverFilterKey>(() => {
+    if (incomingState?.preselectedFilterKey) return incomingState.preselectedFilterKey
+    if (incomingState?.preselectedSpecialty) return filterKeyFromSpecialty(incomingState.preselectedSpecialty)
+    return "all"
+  })
+  const [mode, setMode] = useState<ConsultMode>(() => {
+    if (incomingState?.startRide) return "opd"
+    return incomingState?.recommendedMode ?? "tele"
+  })
+  const [selectedDoctor, setSelectedDoctor] = useState(() => incomingState?.selectedDoctorId ?? "")
+  const [ridePhase, setRidePhase] = useState(0)
+  const [rideProgress, setRideProgress] = useState(0)
+  const [rideBanner, setRideBanner] = useState<"booked" | "onway" | "reached" | null>(null)
+  const [callState, setCallState] = useState<CallState>("ready")
+  const [micOn, setMicOn] = useState(true)
+  const [camOn, setCamOn] = useState(true)
+  const [mediaPermission, setMediaPermission] = useState<MediaPermission>("idle")
+  const [mediaError, setMediaError] = useState("")
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [speakerVolume, setSpeakerVolume] = useState(65)
+  const [showDoctors, setShowDoctors] = useState(false)
+
+  const localVideoRef = useRef<HTMLVideoElement | null>(null)
+  const localStreamRef = useRef<MediaStream | null>(null)
+  const connectTimerRef = useRef<number | null>(null)
+  const callClockRef = useRef<number | null>(null)
+
+  const selectedDoctorInfo = doctors.find((doctor) => doctor.id === selectedDoctor) ?? null
+
+  const activeFilter = useMemo(
+    () => discoverFilters.find((item) => item.key === activeFilterKey) ?? discoverFilters[0],
+    [activeFilterKey],
+  )
+
+  const visibleDoctors = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return doctors.filter((doctor) => {
+      const bySpecialty = activeFilter.specialties === "all" || activeFilter.specialties.includes(doctor.specialty)
+      const byText = !q || doctor.name.toLowerCase().includes(q) || doctor.specialty.toLowerCase().includes(q)
+      return bySpecialty && byText
+    })
+  }, [query, activeFilter])
+
+  const rideSteps = [
+    "Ride is on the way to pick you up",
+    "You are on the way to the OPD doctor",
+    "Arrived at clinic. Doctor will see you shortly",
+  ]
+
+  useEffect(() => {
+    const state = location.state as TeleNavState | undefined
+
+    if (!state) return
+
+    if (state.fromAiAnalyser) {
+      if (state.analysisQuery) setAnalysisQuery(state.analysisQuery)
+      if (Array.isArray(state.selectedSymptoms) && state.selectedSymptoms.length > 0) {
+        setSelectedSymptoms(state.selectedSymptoms)
+      }
+      if (state.preselectedSpecialty) {
+        setActiveFilterKey(filterKeyFromSpecialty(state.preselectedSpecialty))
+      }
+      if (state.preselectedFilterKey) setActiveFilterKey(state.preselectedFilterKey)
+      if (state.recommendedMode) setMode(state.recommendedMode)
+      setStep("options")
+    }
+
+    if (state.preselectedSpecialty) {
+      setActiveFilterKey(filterKeyFromSpecialty(state.preselectedSpecialty))
+      setStep("options")
+    }
+    if (state.preselectedFilterKey) {
+      setActiveFilterKey(state.preselectedFilterKey)
+      setStep("options")
+    }
+
+    if (state.selectedDoctorId) setSelectedDoctor(state.selectedDoctorId)
+    if (state.startVideo) {
+      setMode("tele")
+      setStep("video")
+      setCallState("ready")
+      return
+    }
+    if (state.startRide) {
+      setMode("opd")
+      setStep("ride")
+      setRidePhase(0)
+      return
+    }
+  }, [location.state])
+
+  useEffect(() => {
+    if (step !== "options") return
+    setShowDoctors(false)
+    const timer = window.setTimeout(() => setShowDoctors(true), 280)
+    return () => window.clearTimeout(timer)
+  }, [mode, step])
+
+  useEffect(() => {
+    if (step !== "ride" || !selectedDoctorInfo) return
+
+    setRidePhase(0)
+    setRideProgress(0)
+    setRideBanner("booked")
+
+    let intervalId = 0
+    const onWayTimer = window.setTimeout(() => setRideBanner("onway"), 1300)
+    const progressTimer = window.setTimeout(() => {
+      intervalId = window.setInterval(() => {
+        setRideProgress((prev) => {
+          const next = Math.min(prev + 10, 100)
+          if (next >= 100) {
+            window.clearInterval(intervalId)
+            setRidePhase(2)
+            setRideBanner("reached")
+            return next
+          }
+          if (next >= 45 && next < 85) setRidePhase(1)
+          if (next >= 85) setRidePhase(2)
+          return next
+        })
+      }, 900)
+    }, 1800)
+
+    return () => {
+      window.clearTimeout(onWayTimer)
+      window.clearTimeout(progressTimer)
+      if (intervalId) window.clearInterval(intervalId)
+    }
+  }, [step, selectedDoctorInfo])
+
+  useEffect(() => {
+    return () => {
+      if (connectTimerRef.current) window.clearTimeout(connectTimerRef.current)
+      if (callClockRef.current) window.clearInterval(callClockRef.current)
+      localStreamRef.current?.getTracks().forEach((track) => track.stop())
+      localStreamRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    const stream = localStreamRef.current
+    if (!stream) return
+    stream.getAudioTracks().forEach((track) => {
+      track.enabled = micOn
+    })
+  }, [micOn])
+
+  useEffect(() => {
+    const stream = localStreamRef.current
+    if (!stream) return
+    stream.getVideoTracks().forEach((track) => {
+      track.enabled = camOn
+    })
+  }, [camOn])
+
+  function continueJourney() {
+    if (!selectedDoctorInfo) return
+    if (mode === "tele") {
+      setStep("video")
+      setCallState("ready")
+      return
+    }
+    navigate("/teleconsultation/pickup", { state: { doctor: selectedDoctorInfo, analysisQuery, selectedSymptoms } })
+  }
+
+  function stopLocalStream() {
+    if (localVideoRef.current) localVideoRef.current.srcObject = null
+    localStreamRef.current?.getTracks().forEach((track) => track.stop())
+    localStreamRef.current = null
+  }
+
+  async function requestMediaAccess() {
+    try {
+      setMediaError("")
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      localStreamRef.current?.getTracks().forEach((track) => track.stop())
+      localStreamRef.current = stream
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream
+        localVideoRef.current.play().catch(() => undefined)
+      }
+      setMediaPermission("granted")
+      setMicOn(true)
+      setCamOn(true)
+      playAppSound("tap")
+      return true
+    } catch {
+      setMediaPermission("denied")
+      setMediaError("Camera and microphone permission is required to start this consultation call.")
+      playAppSound("error")
+      return false
+    }
+  }
+
+  function startVideoCall() {
+    if (!selectedDoctorInfo || callState === "connecting") return
+    playAppSound("tap")
+    if (connectTimerRef.current) window.clearTimeout(connectTimerRef.current)
+    setElapsedSeconds(0)
+    setCallState("connecting")
+    connectTimerRef.current = window.setTimeout(() => {
+      setCallState("live")
+      playAppSound("notify")
+      if (callClockRef.current) window.clearInterval(callClockRef.current)
+      callClockRef.current = window.setInterval(() => {
+        setElapsedSeconds((prev) => prev + 1)
+      }, 1000)
+    }, 1400)
+  }
+
+  async function handleStartVideoCall() {
+    if (!selectedDoctorInfo || callState === "connecting") return
+    const canProceed = localStreamRef.current ? true : await requestMediaAccess()
+    if (!canProceed) return
+    startVideoCall()
+  }
+
+  function endVideoCall() {
+    if (connectTimerRef.current) window.clearTimeout(connectTimerRef.current)
+    if (callClockRef.current) window.clearInterval(callClockRef.current)
+    connectTimerRef.current = null
+    callClockRef.current = null
+    setCallState("ended")
+    setElapsedSeconds(0)
+    stopLocalStream()
+    setMediaPermission("idle")
+    setMediaError("")
+    playAppSound("error")
+  }
+
+  const liveMinutes = String(Math.floor(elapsedSeconds / 60)).padStart(2, "0")
+  const liveSeconds = String(elapsedSeconds % 60).padStart(2, "0")
+
+  return (
+    <main className="tele-page app-page-enter">
+      <header className="tele-header app-fade-stagger">
+        <button className="tele-back app-pressable" onClick={() => goBackOrFallback(navigate)} type="button" aria-label="Back">
+          <FiArrowLeft />
+        </button>
+        <div>
+          <h1>Book Appointment</h1>
+          <p>Choose consultation type and get matched doctors</p>
+        </div>
+      </header>
+
+      <section className="tele-content app-content-slide">
+        {step === "options" && (
+          <>
+            <section className="mode-row app-fade-stagger">
+              <button
+                type="button"
+                className={`mode-card app-pressable ${mode === "tele" ? "active" : ""}`}
+                onClick={() => setMode("tele")}
+              >
+                <FiVideo />
+                <h3>Teleconsultation</h3>
+                <p>Online doctor appointment</p>
+                <span className="mode-badge">5 mins</span>
+              </button>
+
+              <button
+                type="button"
+                className={`mode-card app-pressable ${mode === "opd" ? "active" : ""}`}
+                onClick={() => setMode("opd")}
+              >
+                <FiMapPin />
+                <h3>OPD Visit</h3>
+                <p>Hospital visit booking</p>
+                <span className="mode-badge">15 mins</span>
+              </button>
+            </section>
+
+            <section className="search-wrap app-fade-stagger">
+              <FiSearch />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search doctors or specialties.."
+              />
+            </section>
+
+            <section className="specialty-row app-fade-stagger">
+              {discoverFilters.map((filter) => (
+                <button
+                  key={filter.key}
+                  className={`specialty-chip app-pressable ${activeFilterKey === filter.key ? "active" : ""}`}
+                  onClick={() => setActiveFilterKey(filter.key)}
+                  type="button"
+                >
+                  {filter.label}
+                </button>
+              ))}
+              <button
+                className="specialty-chip specialty-see-all app-pressable"
+                type="button"
+                onClick={() => navigate("/teleconsultation/categories")}
+              >
+                See all
+              </button>
+            </section>
+
+            <section className="doctor-section app-fade-stagger">
+              <h3>Doctors for your symptoms</h3>
+              <div className={`doctor-list ${showDoctors ? "ready" : ""}`}>
+                {visibleDoctors.map((doctor) => (
+                  <button
+                    key={doctor.id}
+                    className={`doctor-card app-pressable ${selectedDoctor === doctor.id ? "selected" : ""}`}
+                    onClick={() => {
+                      setSelectedDoctor(doctor.id)
+                    }}
+                    type="button"
+                  >
+                    <div className="doctor-avatar">
+                      <img src={doctor.avatar} alt={doctor.name} loading="lazy" />
+                    </div>
+                    <div className="doctor-main">
+                      <h4>{doctor.name}</h4>
+                      <p>{doctor.specialty}</p>
+                      <div className="doctor-rating-block">
+                        <span className="doctor-rating"><FiStar /> {doctor.rating.toFixed(1)}</span>
+                        <span className="doctor-reviews">{doctor.reviews} Reviews</span>
+                      </div>
+                    </div>
+                    <div className="doctor-time-badge">
+                      {mode === "tele" ? "Call" : "Visit"} {doctor.eta}
+                    </div>
+                    <div className="doctor-go" aria-hidden="true">
+                      <FiArrowUpRight />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="consult-map-wrap app-fade-stagger">
+              <h3>Nearby Clinic Route</h3>
+              <article className="consult-map">
+                <div className="consult-pin user">You</div>
+                <div className="consult-route" />
+                <div className="consult-pin clinic">Clinic</div>
+                <div className="consult-chip eta">{mode === "tele" ? "5 mins" : "15 mins"}</div>
+                <div className="consult-chip dist">{selectedDoctorInfo ? selectedDoctorInfo.distance : "2.5 km away"}</div>
+              </article>
+            </section>
+          </>
+        )}
+
+        {step === "video" && selectedDoctorInfo && (
+          <section className="video-stage app-fade-stagger">
+            <div className="video-top">
+              <h3>{selectedDoctorInfo.name}</h3>
+              <p>{selectedDoctorInfo.specialty}</p>
+            </div>
+
+            <div className="video-call-shell">
+              <div className="video-screen remote" style={{ backgroundImage: `url(${selectedDoctorInfo.avatar})` }}>
+                <div className="video-screen-overlay" />
+                {callState === "ready" && <span className="video-state-chip">Ready to connect</span>}
+                {callState === "connecting" && <span className="video-state-chip">Connecting call...</span>}
+                {callState === "live" && <span className="video-state-chip">Live with doctor</span>}
+                {callState === "ended" && <span className="video-state-chip">Call ended</span>}
+                {(callState === "live" || callState === "connecting") && (
+                  <div className="video-clock">
+                    <span>{liveMinutes}:{liveSeconds}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="video-screen local">
+                {camOn && mediaPermission === "granted" ? (
+                  <video ref={localVideoRef} autoPlay playsInline muted />
+                ) : (
+                  <span>{mediaPermission !== "granted" ? "Camera preview" : "Camera Off"}</span>
+                )}
+              </div>
+
+              <div className="speaker-strip" aria-label="Speaker volume">
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={speakerVolume}
+                  onChange={(e) => setSpeakerVolume(Number(e.target.value))}
+                  aria-label="Speaker volume control"
+                />
+                <FiMic />
+              </div>
+            </div>
+
+            {mediaError && <p className="video-permission-note">{mediaError}</p>}
+            {mediaPermission === "idle" && (
+              <p className="video-permission-note">Allow camera and microphone permission before starting the call.</p>
+            )}
+
+            <div className="video-controls">
+              <button
+                type="button"
+                className="app-pressable"
+                onClick={() => setMicOn((prev) => !prev)}
+                aria-label={micOn ? "Mute microphone" : "Unmute microphone"}
+              >
+                {micOn ? <FiMic /> : <FiMicOff />}
+              </button>
+              <button
+                type="button"
+                className="app-pressable"
+                onClick={() => setCamOn((prev) => !prev)}
+                aria-label={camOn ? "Turn off camera" : "Turn on camera"}
+              >
+                {camOn ? <FiVideo /> : <FiVideoOff />}
+              </button>
+              {callState !== "live" && callState !== "connecting" && (
+                <button type="button" className="start-call app-pressable" onClick={handleStartVideoCall}>
+                  Start Call
+                </button>
+              )}
+              {(callState === "live" || callState === "connecting") && (
+                <button type="button" className="end-call app-pressable" onClick={endVideoCall}>
+                  <FiPhoneOff />
+                </button>
+              )}
+            </div>
+          </section>
+        )}
+
+        {step === "ride" && selectedDoctorInfo && (
+          <section className="ride-stage app-fade-stagger">
+            <h3>OPD Ride Tracking</h3>
+            <p>{selectedDoctorInfo.name} is booked. Live ride updates below.</p>
+
+            <article className="ride-map">
+              <iframe
+                title="Ride live map"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                src="https://maps.google.com/maps?q=12.9716,77.5946%20to%2012.9352,77.6245&z=12&output=embed"
+              />
+              <div className="ride-pin user">You</div>
+              <div className="ride-route" />
+              <div className="ride-car" style={{ left: `calc(${rideProgress}% - 18px)` }}>Ride</div>
+              <div className="ride-pin clinic">OPD</div>
+            </article>
+
+            <article className="ride-status">
+              <span>{ridePhase + 1}/3</span>
+              <strong>{rideSteps[ridePhase]}</strong>
+              <p>{rideProgress}% completed</p>
+            </article>
+          </section>
+        )}
+      </section>
+
+      {step === "options" && (
+        <footer className="tele-footer app-fade-stagger">
+          {selectedDoctorInfo && (
+            <div className="book-actions">
+              <button
+                className="book-later-btn app-pressable"
+                type="button"
+                onClick={() =>
+                  navigate("/teleconsultation/schedule", {
+                    state: {
+                      doctor: selectedDoctorInfo,
+                      mode,
+                      analysisQuery,
+                      selectedSymptoms,
+                    },
+                  })
+                }
+              >
+                Schedule
+              </button>
+              <button className="book-btn app-pressable" type="button" onClick={continueJourney}>
+                Book Now
+              </button>
+            </div>
+          )}
+          {!selectedDoctorInfo && (
+            <p className="tele-hint">Select any doctor card to choose Office Pickup or Home Pickup.</p>
+          )}
+        </footer>
+      )}
+
+      {step === "ride" && rideBanner === "booked" && (
+        <div className="booked-toast app-page-enter" role="status">
+          <FiCheckCircle /> Appointment booked.
+        </div>
+      )}
+
+      {step === "ride" && rideBanner === "onway" && (
+        <div className="booked-toast onway app-page-enter" role="status">
+          <FiCheckCircle /> Your ride is on the way.
+        </div>
+      )}
+
+      {step === "ride" && rideBanner === "reached" && (
+        <div className="booked-toast app-page-enter" role="status">
+          <FiCheckCircle /> Arrived. Please proceed to doctor cabin.
+        </div>
+      )}
+    </main>
+  )
+}
