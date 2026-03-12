@@ -16,8 +16,15 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png"],
+      buildBase: "/",
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        clientsClaim: true,
+        skipWaiting: true,
+        cleanupOutdatedCaches: true,
+      },
+      devOptions: {
+        enabled: false,
       },
       manifest: {
         name: "Astikan Employee App",
