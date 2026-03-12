@@ -1002,6 +1002,16 @@
   flex-wrap: wrap;
 }
 
+.lab-page--catalog .lab-horizontal-scroll {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.lab-page--catalog .lab-horizontal-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .lab-page--catalog .lab-symptom-chips button {
   min-height: 31px;
   border-radius: 999px;

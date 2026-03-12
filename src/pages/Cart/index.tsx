@@ -2,6 +2,9 @@ import { FiArrowLeft, FiGift, FiMinus, FiPlus, FiShoppingBag, FiTrash2, FiTruck 
 import { useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { useCart } from "../../app/cart"
+import { ensureEmployeeActor } from "../../services/actorsApi"
+import { getEmployeeCompanySession } from "../../services/authApi"
+import { createPharmacyOrder } from "../../services/pharmacyApi"
 import { medicines } from "../Pharmacy/medicineData"
 import { playAppSound } from "../../utils/sound"
 import "./cart.css"
@@ -14,6 +17,8 @@ export default function CartPage() {
     const ids = new Set(items.map((item) => item.id))
     return medicines.filter((item) => !ids.has(item.id)).slice(0, 3)
   }, [items])
+
+  const companySession = getEmployeeCompanySession()
 
   return (
     <main className="cart-page app-page-enter">
@@ -156,8 +161,40 @@ export default function CartPage() {
           <button
             type="button"
             className="checkout-btn app-pressable"
-            onClick={() => {
+            onClick={async () => {
               playAppSound("notify")
+              const employee = await ensureEmployeeActor({
+                companyReference: "astikan-demo-company",
+                companyName: companySession?.companyName ?? "Astikan",
+                fullName: "Astikan Employee",
+                handle: "astikan-employee",
+                email: "employee@astikan.local",
+              })
+              const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0)
+              await createPharmacyOrder({
+                companyReference: employee.companyId,
+                companyName: companySession?.companyName ?? "Astikan",
+                employee: {
+                  email: employee.email,
+                  fullName: "Astikan Employee",
+                  handle: employee.employeeCode,
+                  employeeCode: employee.employeeCode,
+                },
+                orderSource: "employee_store",
+                subtotalInr: subtotal,
+                walletUsedInr: 0,
+                onlinePaymentInr: subtotal,
+                items: items.map((item) => ({
+                  productId: item.id,
+                  sku: item.id,
+                  name: item.name,
+                  category: item.kind,
+                  description: `${item.dose} • ${item.kind}`,
+                  price: item.price,
+                  quantity: item.qty,
+                  imageUrls: [item.image],
+                })),
+              })
               const orderedItems = totalItems
               clearCart()
               navigate("/pharmacy/booking-success", { state: { orderedItems } })

@@ -54,6 +54,10 @@ export default function WeekendTasks() {
           <FiLink />
           View Wallet
         </button>
+        <button className="wallet-btn app-pressable" type="button" onClick={() => navigate("/health-assessments")}>
+          <FiTarget />
+          Health Assessments
+        </button>
       </header>
 
       <section className="weekend-content app-content-slide">

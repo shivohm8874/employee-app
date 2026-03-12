@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { FiBriefcase, FiShield } from "react-icons/fi"
 import { Link, useNavigate } from "react-router-dom"
+import { authorizeEmployeeCompany, getEmployeeAuthSession, saveEmployeeCompanySession } from "../../services/authApi"
 import "./company.css"
 
 function isValidCompanyCode(value: string) {
@@ -24,7 +25,7 @@ export default function Company() {
     setError("")
   }
 
-  function handleContinue() {
+  async function handleContinue() {
     if (!isValidCompanyCode(code)) {
       setError(
         "Company code must be 12 characters, alphanumeric, with letters and numbers"
@@ -34,14 +35,25 @@ export default function Company() {
 
     setLoading(true)
 
-    // Simulated API call
-    setTimeout(() => {
+    try {
+      const session = await authorizeEmployeeCompany(code)
+      saveEmployeeCompanySession(session)
       setLoading(false)
       navigate("/login")
-    }, 900)
+    } catch (error) {
+      setLoading(false)
+      setError(error instanceof Error ? error.message : "Unable to verify company code")
+    }
   }
 
   const isValid = isValidCompanyCode(code)
+
+  useEffect(() => {
+    const existingSession = getEmployeeAuthSession()
+    if (existingSession) {
+      navigate("/assessment")
+    }
+  }, [navigate])
 
   return (
     <div className="company-screen app-page-enter">

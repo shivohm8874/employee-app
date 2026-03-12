@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { FiArrowLeft, FiImage, FiMic, FiSend } from "react-icons/fi"
 import { useLocation, useNavigate } from "react-router-dom"
-import { askAiChat, getAiLabReadinessQuestions, type ReadinessQuestion } from "../../services/aiApi"
+import { askAiChat, getAiLabReadinessQuestions, getAiThread, type ReadinessQuestion } from "../../services/aiApi"
+import { ensureEmployeeActor } from "../../services/actorsApi"
+import { getEmployeeCompanySession } from "../../services/authApi"
 import { useProcessLoading } from "../../app/process-loading"
 import { getLabCatalog } from "../../services/labApi"
 import "./aichat.css"
@@ -29,6 +31,7 @@ const defaultSuggestions = [
   "What tests should I consider first?",
   "Any urgent warning signs to watch?",
 ]
+const THREAD_STORAGE_KEY = "employee_ai_thread_id"
 
 function nowTime() {
   const d = new Date()
@@ -131,6 +134,7 @@ function mapCategoryToColor(tag: string): LabWidget["color"] {
 export default function AIChat() {
   const navigate = useNavigate()
   const location = useLocation()
+  const companySession = getEmployeeCompanySession()
   const { start: startProcessLoading, stop: stopProcessLoading } = useProcessLoading()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const prefillHandled = useRef(false)
@@ -163,6 +167,48 @@ export default function AIChat() {
   const [isListening, setIsListening] = useState(false)
   const [aiQuickReplies, setAiQuickReplies] = useState<string[]>(defaultSuggestions)
   const [bookingWidgetId, setBookingWidgetId] = useState<string | null>(null)
+  const [threadId] = useState(() => {
+    const existing = localStorage.getItem(THREAD_STORAGE_KEY)
+    if (existing) return existing
+    const generated = `emp-ai-${Math.random().toString(36).slice(2, 10)}`
+    localStorage.setItem(THREAD_STORAGE_KEY, generated)
+    return generated
+  })
+  const [employeeUserId, setEmployeeUserId] = useState("")
+
+  useEffect(() => {
+    let active = true
+    void ensureEmployeeActor({
+      companyReference: "astikan-demo-company",
+      companyName: companySession?.companyName ?? "Astikan",
+      fullName: "Astikan Employee",
+      handle: "astikan-employee",
+      email: "employee@astikan.local",
+    })
+      .then((actor) => {
+        if (!active) return
+        setEmployeeUserId(actor.employeeUserId)
+        return getAiThread(threadId)
+      })
+      .then((rows) => {
+        if (!active || !rows || rows.length === 0) return
+        setMessages(
+          rows.map((row, index) => ({
+            id: `${index}-${row.createdAt ?? Date.now()}`,
+            from: row.role === "assistant" ? "ai" : "user",
+            text: row.content,
+            time: nowTime(),
+          })),
+        )
+      })
+      .catch(() => {
+        // Keep seeded conversation if backend history is unavailable.
+      })
+
+    return () => {
+      active = false
+    }
+  }, [threadId])
 
   useEffect(() => {
     messagesRef.current = messages
@@ -185,10 +231,13 @@ export default function AIChat() {
   }, [aiQuickReplies, draft, messages])
 
   async function buildAiMessage(content: string, history: Array<{ role: "user" | "assistant"; content: string }>) {
-    const result = await askAiChat({
-      message: content,
-      history,
-    })
+      const result = await askAiChat({
+        message: content,
+        history,
+        threadId,
+        userId: employeeUserId || undefined,
+        appContext: "employee",
+      })
     setAiQuickReplies(toUserSideQuickReplies(result.quickReplies ?? []))
 
     const suggested = result.suggestedTests ?? []

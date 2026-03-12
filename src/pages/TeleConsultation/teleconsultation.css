@@ -58,6 +58,12 @@
   padding: 86px 14px calc(102px + env(safe-area-inset-bottom));
 }
 
+.tele-content-call {
+  padding: 0;
+  overflow: hidden;
+  background: #070b16;
+}
+
 .symptom-panel {
   background: linear-gradient(127deg, #5f75d8 0%, #8f2eb8 100%);
   border: 1px solid #c9b5e7;
@@ -229,6 +235,12 @@
   gap: 8px;
   overflow-x: auto;
   padding-bottom: 2px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.specialty-row::-webkit-scrollbar {
+  display: none;
 }
 
 .specialty-chip {
@@ -373,6 +385,15 @@
   align-content: start;
   column-gap: 10px;
   row-gap: 7px;
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease,
+    background 220ms ease;
+}
+
+.doctor-card:active {
+  transform: scale(0.985);
 }
 
 .doctor-card.selected {
@@ -380,6 +401,7 @@
   background: linear-gradient(145deg, #0fb4a2, #0a9d90);
   color: #f3fffd;
   box-shadow: 0 10px 22px rgba(10, 133, 121, 0.24);
+  transform: translateY(-3px);
 }
 
 .doctor-avatar {
@@ -455,21 +477,26 @@
 
 .doctor-time-badge {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  left: 12px;
+  bottom: 12px;
   border-radius: 999px;
-  padding: 4px 8px;
+  padding: 6px 10px;
   font-size: 0.72rem;
   font-weight: 700;
   color: #32435f;
   background: #edf4f5;
   border: 1px solid #d8e8e8;
+  transition:
+    transform 220ms ease,
+    background 220ms ease,
+    color 220ms ease;
 }
 
 .doctor-card.selected .doctor-time-badge {
   color: #04675f;
   background: #d6fbf5;
   border-color: transparent;
+  transform: translateY(-1px);
 }
 
 .doctor-go {
@@ -497,9 +524,22 @@
 
 .video-stage {
   border: 1px solid #d8deec;
-  background: linear-gradient(180deg, #ffffff, #f6f9ff);
+  background:
+    radial-gradient(circle at 8% 8%, rgba(16, 196, 178, 0.12), transparent 36%),
+    radial-gradient(circle at 90% 20%, rgba(79, 70, 229, 0.1), transparent 38%),
+    linear-gradient(180deg, #ffffff, #f6f9ff);
   border-radius: 28px;
   padding: 16px 14px 20px;
+  box-shadow: 0 14px 34px rgba(41, 53, 77, 0.08);
+}
+
+.tele-call-stage {
+  min-height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: #070b16;
+  box-shadow: none;
 }
 
 .video-top h3 {
@@ -523,6 +563,80 @@
   margin-top: 10px;
 }
 
+.tele-join-loader {
+  position: absolute;
+  left: 50%;
+  bottom: calc(26px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(92%, 340px);
+  border-radius: 16px;
+  border: 1px solid rgba(216, 226, 255, 0.45);
+  background: rgba(12, 20, 34, 0.78);
+  color: #f3f7ff;
+  backdrop-filter: blur(7px);
+  z-index: 80;
+  padding: 12px 14px;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.tele-join-loader strong {
+  font-size: 0.95rem;
+}
+
+.tele-join-loader p {
+  margin: 0;
+  color: rgba(233, 240, 255, 0.86);
+  font-size: 0.79rem;
+}
+
+.tele-join-spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.38);
+  border-top-color: #ffffff;
+  animation: teleSpin 0.8s linear infinite;
+}
+
+.zego-template-shell {
+  position: relative;
+  min-height: 100dvh;
+  border-radius: 0;
+  border: 0;
+  overflow: hidden;
+  background: #070b16;
+}
+
+.zego-template-container {
+  width: 100%;
+  height: 100dvh;
+}
+
+.video-stage-template {
+  padding: 0;
+  background: #070b16;
+}
+
+.video-stage-template .video-controls {
+  margin-top: 0;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 60;
+}
+
+.zego-template-container [class*="bottom"][class*="menu"] {
+  position: fixed !important;
+  left: 50% !important;
+  bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+  transform: translateX(-50%);
+  z-index: 65 !important;
+}
+
 .video-screen {
   color: #f8fbff;
   overflow: hidden;
@@ -539,20 +653,25 @@
   align-items: flex-end;
   justify-content: center;
   padding: 0 16px 132px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.26);
+  overflow: hidden;
 }
 
 .video-screen.local {
   position: absolute;
   top: 18px;
   right: 18px;
-  width: 112px;
-  height: 140px;
+  width: 124px;
+  height: 156px;
   border-radius: 24px;
-  border: 1px solid #c9cedf;
+  border: 1px solid rgba(255, 255, 255, 0.55);
   background: linear-gradient(145deg, #d9e0ee, #b5c3d9);
   display: grid;
   place-items: center;
   z-index: 3;
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(22, 36, 67, 0.3);
+  animation: localPreviewFloat 2.8s ease-in-out infinite;
 }
 
 .video-screen.local video {
@@ -588,6 +707,7 @@
   font-size: 13px;
   font-weight: 700;
   padding: 7px 12px;
+  animation: chipReveal 300ms ease;
 }
 
 .video-clock {
@@ -607,35 +727,18 @@
   padding: 6px 12px;
 }
 
-.speaker-strip {
-  position: absolute;
-  left: 14px;
-  top: 33%;
-  transform: translateY(-50%);
-  width: 48px;
-  height: 220px;
-  border-radius: 24px;
-  border: 1px solid #d8dfed;
-  background: rgba(255, 255, 255, 0.92);
-  display: grid;
-  justify-items: center;
-  align-content: space-between;
-  padding: 14px 0 10px;
-  z-index: 4;
-}
-
-.speaker-strip input[type="range"] {
-  writing-mode: vertical-lr;
-  direction: rtl;
-  width: 12px;
-  height: 146px;
-  accent-color: #16b79f;
-}
-
-.speaker-strip svg {
-  width: 16px;
-  height: 16px;
-  color: #23304c;
+.video-clock-inline {
+  margin: 10px auto 0;
+  width: fit-content;
+  border-radius: 999px;
+  background: rgba(32, 43, 61, 0.64);
+  color: #f4f8ff;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 74px;
+  text-align: center;
+  padding: 6px 12px;
 }
 
 .video-permission-note {
@@ -651,6 +754,12 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
+  pointer-events: none;
+}
+
+.video-controls .start-call,
+.video-controls .end-call {
+  pointer-events: auto;
 }
 
 .video-controls button {
@@ -867,6 +976,22 @@
   background: linear-gradient(140deg, #7a2d75, #9a4b93);
 }
 
+.book-btn-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.book-btn-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #ffffff;
+  animation: teleSpin 0.8s linear infinite;
+}
+
 .book-later-btn:disabled,
 .book-btn:disabled {
   opacity: 0.55;
@@ -931,17 +1056,11 @@
   }
 
   .video-screen.local {
-    width: 94px;
-    height: 118px;
+    width: 96px;
+    height: 124px;
     border-radius: 20px;
     top: 14px;
     right: 14px;
-  }
-
-  .speaker-strip {
-    width: 42px;
-    height: 194px;
-    left: 10px;
   }
 
   .video-controls button {
@@ -955,5 +1074,34 @@
     width: 124px;
     height: 66px;
     border-radius: 22px;
+  }
+}
+
+@keyframes localPreviewFloat {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes chipReveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes teleSpin {
+  to {
+    transform: rotate(360deg);
   }
 }

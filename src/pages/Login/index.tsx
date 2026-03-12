@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { FiEye, FiEyeOff, FiLock, FiMail, FiShield } from "react-icons/fi"
+import { getEmployeeAuthSession, getEmployeeCompanySession, loginEmployee, saveEmployeeAuthSession } from "../../services/authApi"
 import "./login.css"
 
 const blockedDomains = new Set(["gmail.com", "yahoo.com", "yahoo.co.in", "yahoo.in"])
@@ -48,8 +49,16 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const companySession = getEmployeeCompanySession()
 
-  function handleSubmit() {
+  useEffect(() => {
+    const session = getEmployeeAuthSession()
+    if (session) {
+      navigate("/assessment")
+    }
+  }, [navigate])
+
+  async function handleSubmit() {
     if (!email || !password) {
       setError("Please enter email and password")
       return
@@ -69,11 +78,23 @@ export default function Login() {
 
     setError("")
     setLoading(true)
+    const companySession = getEmployeeCompanySession()
+    if (!companySession) {
+      setLoading(false)
+      setError("Please enter company code again.")
+      navigate("/company")
+      return
+    }
 
-    setTimeout(() => {
+    try {
+      const session = await loginEmployee(email, password)
+      saveEmployeeAuthSession(session)
       setLoading(false)
       navigate("/assessment")
-    }, 1000)
+    } catch (error) {
+      setLoading(false)
+      setError(error instanceof Error ? error.message : "Unable to sign in")
+    }
   }
 
   return (
@@ -83,7 +104,7 @@ export default function Login() {
           <span className="login-chip">
             <FiShield aria-hidden="true" /> Secure Access
           </span>
-          <h1>HCLTech</h1>
+          <h1>{companySession?.companyName ?? "Astikan"}</h1>
           <p>Your Health Companion</p>
         </header>
 

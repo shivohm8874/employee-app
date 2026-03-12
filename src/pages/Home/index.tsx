@@ -23,6 +23,7 @@ import {
   FiZap,
 } from "react-icons/fi"
 import { useLocation, useNavigate } from "react-router-dom"
+import { getEmployeeCompanySession } from "../../services/authApi"
 import { preloadLabCatalog } from "../../services/labApi"
 import "./home.css"
 
@@ -267,6 +268,8 @@ export default function Home() {
     window.setTimeout(() => setTipInteracting(false), 900)
   }
 
+  const companySession = getEmployeeCompanySession()
+
   return (
     <main className="home-page app-page-enter" onScroll={handleScroll} ref={pageRef}>
       <section className="home-shell">
@@ -274,7 +277,7 @@ export default function Home() {
           <div className="brand">
             <div className="brand-icon"><FiHeart /></div>
             <div className="brand-copy">
-              <h1>HCLTech</h1>
+              <h1>{companySession?.companyName ?? "Astikan"}</h1>
             </div>
           </div>
 
@@ -288,7 +291,7 @@ export default function Home() {
               <FiBell />
               <span className="notify-count">3</span>
             </button>
-            <button className="icon-btn profile-btn app-pressable" aria-label="profile" type="button" onClick={() => navigate("/settings")}>
+            <button className="icon-btn profile-btn app-pressable" aria-label="profile" type="button" onClick={() => navigate("/profile-info")}>
               <FiUser />
             </button>
           </div>

@@ -1,4 +1,5 @@
 ﻿import { useNavigate } from "react-router-dom"
+import { clearEmployeeAuthSession, clearEmployeeCompanySession } from "../../services/authApi"
 import "./settings.css"
 
 const items = [
@@ -12,6 +13,12 @@ const items = [
 
 export default function Settings() {
   const navigate = useNavigate()
+
+  function handleLogout() {
+    clearEmployeeAuthSession()
+    clearEmployeeCompanySession()
+    navigate("/login")
+  }
 
   return (
     <main className="account-page app-page-enter">
@@ -34,6 +41,8 @@ export default function Settings() {
             </button>
           ))}
         </div>
+
+        <button className="logout-btn app-pressable" onClick={handleLogout} type="button">Logout</button>
       </section>
     </main>
   )

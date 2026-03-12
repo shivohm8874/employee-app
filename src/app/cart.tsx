@@ -9,6 +9,7 @@ export type CartItem = {
   kind: string
   image: string
   inStock: boolean
+  price: number
   qty: number
 }
 
@@ -43,6 +44,12 @@ function readInitialCart(): CartItem[] {
   }
 }
 
+function estimateMedicinePrice(item: MedicineItem) {
+  if (item.kind.toLowerCase().includes("capsule")) return 249
+  if (item.kind.toLowerCase().includes("syrup")) return 189
+  return 149
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(() => readInitialCart())
 
@@ -69,6 +76,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         kind: item.kind,
         image: item.image,
         inStock: item.inStock,
+        price: estimateMedicinePrice(item),
         qty: nextQty,
       },
     ])
@@ -112,4 +120,3 @@ export function useCart() {
   }
   return ctx
 }
-

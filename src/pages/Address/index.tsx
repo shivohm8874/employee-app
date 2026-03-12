@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom"
+import { getEmployeeCompanySession } from "../../services/authApi"
 import "../Settings/settings.css"
 
 export default function Address() {
   const navigate = useNavigate()
+  const companySession = getEmployeeCompanySession()
 
   return (
     <main className="account-page app-page-enter">
@@ -17,7 +19,7 @@ export default function Address() {
         </article>
         <article className="account-card app-fade-stagger">
           <h3>Office Address</h3>
-          <p>HCLTech Campus, Madhapur, Hyderabad - 500084</p>
+          <p>{companySession?.companyName ?? "Company"} Campus, Madhapur, Hyderabad - 500084</p>
         </article>
       </section>
     </main>

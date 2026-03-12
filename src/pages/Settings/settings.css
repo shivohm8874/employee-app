@@ -90,6 +90,17 @@
   font-weight: 500;
 }
 
+.logout-btn {
+  margin-top: 14px;
+  width: 100%;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid #f0c4c4;
+  background: #fff0f0;
+  color: #a12a2a;
+  font-weight: 700;
+}
+
 .field-grid {
   display: grid;
   gap: 10px;

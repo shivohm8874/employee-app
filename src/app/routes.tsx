@@ -30,6 +30,7 @@ import MedicineTracking from "../pages/MedicineTracking"
 import Wallet from "../pages/Wallet"
 import Badges from "../pages/Badges"
 import WeekendTasks from "../pages/WeekendTasks"
+import HealthAssessments from "../pages/HealthAssessments"
 import Settings from "../pages/Settings"
 import Address from "../pages/Address"
 import ProfileInfo from "../pages/ProfileInfo"
@@ -71,6 +72,7 @@ export const router = createBrowserRouter([
       { path: "pharmacy/booking-success", element: <PharmacySuccess /> },
       { path: "cart", element: <CartPage /> },
       { path: "weekend-tasks", element: <WeekendTasks /> },
+      { path: "health-assessments", element: <HealthAssessments /> },
       { path: "wallet", element: <Wallet /> },
       { path: "badges", element: <Badges /> },
       { path: "settings", element: <Settings /> },
