@@ -1,5 +1,10 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, "") ?? "/api";
+const DEFAULT_REMOTE_API = "https://astikan-backend-production.up.railway.app/api";
+const envBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, "");
+const inferredRemote =
+  typeof window !== "undefined" && window.location.hostname.endsWith("vercel.app")
+    ? DEFAULT_REMOTE_API
+    : "/api";
+const API_BASE_URL = envBase ?? inferredRemote;
 
 type ApiEnvelope<T> = {
   status: "ok" | "error";
