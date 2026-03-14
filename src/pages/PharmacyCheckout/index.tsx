@@ -112,7 +112,7 @@ export default function PharmacyCheckout() {
       <section className="checkout-shell">
         <article className="checkout-hero card-rise">
           <div>
-            <h2>Zepto-fast delivery</h2>
+            <h2>Astikan Priority Delivery</h2>
             <p>Verified packing, real-time tracking, and safe handoff.</p>
             <div className="hero-tags">
               <span><FiTruck /> 10-15 mins</span>
