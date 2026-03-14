@@ -19,6 +19,13 @@ type AiChatResult = {
     reason?: string;
     category?: string;
   }>;
+  suggestedMedicines?: Array<{
+    name: string;
+    reason?: string;
+    category?: string;
+  }>;
+  doctorSpecialty?: string;
+  nextAction?: "book_doctor" | "suggest_tests" | "none";
 };
 
 export type ReadinessQuestion = {

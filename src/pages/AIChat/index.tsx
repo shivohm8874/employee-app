@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { FiArrowLeft, FiImage, FiMic, FiSend } from "react-icons/fi"
+import { FiArrowLeft, FiCalendar, FiImage, FiMic, FiPlus, FiSend } from "react-icons/fi"
 import { useLocation, useNavigate } from "react-router-dom"
 import { askAiChat, getAiLabReadinessQuestions, getAiThread, type ReadinessQuestion } from "../../services/aiApi"
 import { ensureEmployeeActor } from "../../services/actorsApi"
 import { getEmployeeCompanySession } from "../../services/authApi"
 import { useProcessLoading } from "../../app/process-loading"
 import { getLabCatalog } from "../../services/labApi"
+import { fetchPharmacyProducts } from "../../services/pharmacyApi"
+import { mapProductToMedicine, type MedicineItem } from "../Pharmacy/medicineData"
+import { useCart } from "../../app/cart"
 import "./aichat.css"
 
 type Message = {
@@ -14,6 +17,8 @@ type Message = {
   text: string
   time: string
   widgets?: LabWidget[]
+  medicines?: MedicineWidget[]
+  actions?: ChatAction[]
 }
 
 type LabWidget = {
@@ -26,12 +31,32 @@ type LabWidget = {
   color: "red" | "blue" | "gray" | "green" | "outline"
 }
 
+type MedicineWidget = {
+  id: string
+  name: string
+  desc: string
+  category: string
+  priceLabel: string
+  inStock: boolean
+  image: string
+  medicine: MedicineItem
+}
+
+type ChatAction = {
+  id: string
+  label: string
+  action: "book_doctor" | "open_cart"
+  payload?: Record<string, unknown>
+}
+
 const defaultSuggestions = [
   "Since when is this happening?",
   "What tests should I consider first?",
   "Any urgent warning signs to watch?",
 ]
 const THREAD_STORAGE_KEY = "employee_ai_thread_id"
+const MESSAGE_STORAGE_PREFIX = "employee_ai_thread_messages:"
+const fallbackMedicineImage = "https://images.unsplash.com/photo-1585435557343-3b092031a831?auto=format&fit=crop&w=900&q=80"
 
 function nowTime() {
   const d = new Date()
@@ -136,6 +161,7 @@ export default function AIChat() {
   const location = useLocation()
   const companySession = getEmployeeCompanySession()
   const { start: startProcessLoading, stop: stopProcessLoading } = useProcessLoading()
+  const { addItem } = useCart()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const prefillHandled = useRef(false)
 
@@ -177,6 +203,19 @@ export default function AIChat() {
   const [employeeUserId, setEmployeeUserId] = useState("")
 
   useEffect(() => {
+    const stored = localStorage.getItem(`${MESSAGE_STORAGE_PREFIX}${threadId}`)
+    if (!stored) return
+    try {
+      const parsed = JSON.parse(stored) as Message[]
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        setMessages(parsed)
+      }
+    } catch {
+      // ignore malformed cache
+    }
+  }, [threadId])
+
+  useEffect(() => {
     let active = true
     void ensureEmployeeActor({
       companyReference: "astikan-demo-company",
@@ -192,14 +231,14 @@ export default function AIChat() {
       })
       .then((rows) => {
         if (!active || !rows || rows.length === 0) return
-        setMessages(
-          rows.map((row, index) => ({
-            id: `${index}-${row.createdAt ?? Date.now()}`,
-            from: row.role === "assistant" ? "ai" : "user",
-            text: row.content,
-            time: nowTime(),
-          })),
-        )
+        const hydrated = rows.map((row, index) => ({
+          id: `${index}-${row.createdAt ?? Date.now()}`,
+          from: row.role === "assistant" ? "ai" : "user",
+          text: row.content,
+          time: nowTime(),
+        }))
+        setMessages(hydrated)
+        localStorage.setItem(`${MESSAGE_STORAGE_PREFIX}${threadId}`, JSON.stringify(hydrated))
       })
       .catch(() => {
         // Keep seeded conversation if backend history is unavailable.
@@ -213,6 +252,11 @@ export default function AIChat() {
   useEffect(() => {
     messagesRef.current = messages
   }, [messages])
+
+  useEffect(() => {
+    if (!threadId) return
+    localStorage.setItem(`${MESSAGE_STORAGE_PREFIX}${threadId}`, JSON.stringify(messages))
+  }, [messages, threadId])
 
   useEffect(() => {
     setAiQuickReplies(contextualSuggestions(getLatestUserText(messages)))
@@ -231,17 +275,35 @@ export default function AIChat() {
   }, [aiQuickReplies, draft, messages])
 
   async function buildAiMessage(content: string, history: Array<{ role: "user" | "assistant"; content: string }>) {
-      const result = await askAiChat({
-        message: content,
-        history,
-        threadId,
-        userId: employeeUserId || undefined,
-        appContext: "employee",
-      })
+    const result = await askAiChat({
+      message: content,
+      history,
+      threadId,
+      userId: employeeUserId || undefined,
+      appContext: "employee",
+    })
     setAiQuickReplies(toUserSideQuickReplies(result.quickReplies ?? []))
 
     const suggested = result.suggestedTests ?? []
     let widgets: LabWidget[] = []
+    let medicines: MedicineWidget[] = []
+    const actions: ChatAction[] = []
+
+    const wantsDoctor =
+      result.nextAction === "book_doctor" ||
+      /book\s+(a\s+)?doctor|consult(ation)?/i.test(content)
+
+    if (wantsDoctor) {
+      actions.push({
+        id: `book-doctor-${Date.now()}`,
+        label: "Book Doctor",
+        action: "book_doctor",
+        payload: {
+          specialty: result.doctorSpecialty,
+          analysisQuery: content,
+        },
+      })
+    }
 
     if (suggested.length > 0) {
       const widgetResults = await Promise.all(
@@ -283,12 +345,65 @@ export default function AIChat() {
       widgets = widgetResults.filter((item): item is LabWidget => !!item)
     }
 
+    if ((result.suggestedMedicines ?? []).length > 0) {
+      const medicineResults = await Promise.all(
+        (result.suggestedMedicines ?? []).slice(0, 4).map(async (item, index) => {
+          const keyword = item.name.trim()
+          if (!keyword) return null
+
+          try {
+            const rows = await fetchPharmacyProducts({ search: keyword, limit: 1, audience: "employee" })
+            const match = rows?.[0]
+            if (match) {
+              const med = mapProductToMedicine(match, index)
+              return {
+                id: med.id,
+                name: med.name,
+                desc: item.reason || med.overview,
+                category: med.kind,
+                priceLabel: med.price ? `₹${med.price}` : "Ask pharmacist",
+                inStock: med.inStock,
+                image: med.image,
+                medicine: med,
+              } satisfies MedicineWidget
+            }
+          } catch {
+            // fall through to fallback
+          }
+
+          const fallbackProduct = {
+            id: `ai-med-${index}-${Date.now()}`,
+            name: item.name,
+            category: item.category ?? "Medicine",
+            description: item.reason ?? "Suggested by the care assistant",
+            base_price_inr: 0,
+            image_urls_json: [fallbackMedicineImage],
+            in_stock: true,
+          }
+          const med = mapProductToMedicine(fallbackProduct, index)
+          return {
+            id: med.id,
+            name: med.name,
+            desc: item.reason || med.overview,
+            category: med.kind,
+            priceLabel: "Ask pharmacist",
+            inStock: med.inStock,
+            image: med.image,
+            medicine: med,
+          } satisfies MedicineWidget
+        })
+      )
+      medicines = medicineResults.filter((item): item is MedicineWidget => !!item)
+    }
+
     return {
       id: `${Date.now()}-a`,
       from: "ai" as const,
       text: result.reply,
       time: nowTime(),
       widgets,
+      medicines,
+      actions,
     }
   }
 
@@ -399,6 +514,23 @@ export default function AIChat() {
     }
   }
 
+  function onActionClick(action: ChatAction) {
+    if (action.action === "open_cart") {
+      navigate("/cart")
+      return
+    }
+    if (action.action === "book_doctor") {
+      const specialty = String(action.payload?.specialty ?? "").trim()
+      navigate("/teleconsultation", {
+        state: {
+          fromAiAnalyser: true,
+          preselectedSpecialty: specialty || undefined,
+          analysisQuery: String(action.payload?.analysisQuery ?? "") || undefined,
+        },
+      })
+    }
+  }
+
   useEffect(() => {
     const state = location.state as { prefill?: string } | undefined
     if (prefillHandled.current || !state?.prefill) {
@@ -442,6 +574,21 @@ export default function AIChat() {
             <div className="message-bubble">
               {msg.from === "ai" && <div className="bubble-badge">Care Assistant</div>}
               <div className="message-text">{renderRichText(msg.text)}</div>
+              {msg.from === "ai" && !!msg.actions?.length && (
+                <div className="ai-action-row">
+                  {msg.actions.map((action) => (
+                    <button
+                      key={action.id}
+                      type="button"
+                      className="ai-action-btn app-pressable"
+                      onClick={() => onActionClick(action)}
+                    >
+                      <FiCalendar />
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
+              )}
               {msg.from === "ai" && !!msg.widgets?.length && (
                 <div className="ai-lab-widget-list">
                   {msg.widgets.map((widget) => (
@@ -462,6 +609,32 @@ export default function AIChat() {
                         disabled={bookingWidgetId === widget.id}
                       >
                         Book
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              )}
+              {msg.from === "ai" && !!msg.medicines?.length && (
+                <div className="ai-med-widget-list">
+                  {msg.medicines.map((med) => (
+                    <article key={med.id} className="ai-med-widget">
+                      <img src={med.image} alt={med.name} loading="lazy" />
+                      <div className="ai-med-info">
+                        <h4>{med.name}</h4>
+                        <p>{med.desc}</p>
+                        <div className="ai-med-meta">
+                          <span>{med.category}</span>
+                          <span>{med.priceLabel}</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="ai-med-add app-pressable"
+                        onClick={() => {
+                          addItem(med.medicine)
+                        }}
+                      >
+                        <FiPlus /> Add
                       </button>
                     </article>
                   ))}
