@@ -192,6 +192,7 @@ export default function AIChat() {
   const [attachedName, setAttachedName] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [loadingStep, setLoadingStep] = useState(0)
+  const [loadingText, setLoadingText] = useState("")
   const [isListening, setIsListening] = useState(false)
   const [aiQuickReplies, setAiQuickReplies] = useState<string[]>(defaultSuggestions)
   const [bookingWidgetId, setBookingWidgetId] = useState<string | null>(null)
@@ -269,6 +270,7 @@ export default function AIChat() {
   useEffect(() => {
     if (!isTyping) {
       setLoadingStep(0)
+      setLoadingText("")
       return
     }
     const interval = window.setInterval(() => {
@@ -276,6 +278,20 @@ export default function AIChat() {
     }, 1400)
     return () => window.clearInterval(interval)
   }, [isTyping])
+
+  useEffect(() => {
+    if (!isTyping) return
+    const lastUser = getLatestUserText(messagesRef.current).slice(0, 90)
+    const label = lastUser ? `“${lastUser}”` : "your symptoms"
+    const pool = [
+      `Understanding ${label}...`,
+      "Mapping likely causes and safe next steps...",
+      "Checking if a doctor consult is needed...",
+      "Looking at possible remedies and cautions...",
+      "Summarizing a clear response for you...",
+    ]
+    setLoadingText(pool[loadingStep % pool.length])
+  }, [isTyping, loadingStep])
 
   useEffect(() => {
     setAiQuickReplies(contextualSuggestions(getLatestUserText(messages)))
@@ -675,9 +691,7 @@ export default function AIChat() {
         {isTyping && (
           <div className="message-row ai">
             <div className="message-bubble typing-status">
-              {loadingStep === 0 && "Analyzing symptoms..."}
-              {loadingStep === 1 && "Since last night... hmm..."}
-              {loadingStep === 2 && "Checking the best next step for you..."}
+              {loadingText || "Thinking..."}
             </div>
           </div>
         )}
