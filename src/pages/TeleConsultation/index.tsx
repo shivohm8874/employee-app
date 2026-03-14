@@ -866,16 +866,7 @@ export default function TeleConsultation() {
               </div>
             </section>
 
-            <section className="consult-map-wrap app-fade-stagger">
-              <h3>Nearby Clinic Route</h3>
-              <article className="consult-map">
-                <div className="consult-pin user">You</div>
-                <div className="consult-route" />
-                <div className="consult-pin clinic">Clinic</div>
-                <div className="consult-chip eta">{mode === "tele" ? "5 mins" : "15 mins"}</div>
-                <div className="consult-chip dist">{selectedDoctorInfo ? selectedDoctorInfo.distance : "2.5 km away"}</div>
-              </article>
-            </section>
+            {/* Nearby clinic route removed per UX request */}
           </>
         )}
 
