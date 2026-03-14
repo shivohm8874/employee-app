@@ -280,6 +280,17 @@ export default function TeleConsultation() {
   const callExitHandledRef = useRef(false)
 
   const selectedDoctorInfo = doctors.find((doctor) => doctor.id === selectedDoctor) ?? null
+  const rideDoctor = selectedDoctorInfo ?? doctors[0] ?? {
+    id: "assigned",
+    name: "Assigned Doctor",
+    specialty: "Internal Medicine",
+    rating: 4.7,
+    reviews: 80,
+    distance: "2.5 km away",
+    eta: "15 mins",
+    fee: 28,
+    avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=160&q=80",
+  }
 
   useEffect(() => {
     let active = true
@@ -946,10 +957,10 @@ export default function TeleConsultation() {
           </section>
         )}
 
-        {step === "ride" && selectedDoctorInfo && (
+        {step === "ride" && (
           <section className="ride-stage app-fade-stagger">
             <h3>OPD Ride Tracking</h3>
-            <p>{selectedDoctorInfo.name} is booked. Live ride updates below.</p>
+            <p>{rideDoctor.name} is booked. Live ride updates below.</p>
 
             <article className="ride-map">
               <iframe
