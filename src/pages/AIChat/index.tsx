@@ -233,7 +233,7 @@ export default function AIChat() {
       })
       .then((rows) => {
         if (!active || !rows || rows.length === 0) return
-        const hydrated = rows.map((row, index) => ({
+        const hydrated: Message[] = rows.map((row, index) => ({
           id: `${index}-${row.createdAt ?? Date.now()}`,
           from: row.role === "assistant" ? "ai" : "user",
           text: row.content,
