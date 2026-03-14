@@ -102,7 +102,7 @@ export default function Pharmacy() {
     }
   }, [])
 
-  const sourceItems = catalog.length ? catalog : medicines
+  const sourceItems = (catalog.length ? catalog : medicines).filter((item) => item.inStock)
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return sourceItems.filter((item) => {

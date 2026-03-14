@@ -5,6 +5,7 @@ export type MedicineItem = {
   kind: string
   inStock: boolean
   image: string
+  images?: string[]
   price?: number
   overview: string
   uses: string[]
@@ -47,9 +48,14 @@ function buildFallbackUses(name: string) {
 }
 
 export function mapProductToMedicine(product: PharmacyProduct, index = 0): MedicineItem {
-  const image = product.image_urls_json?.[0] ?? fallbackImages[index % fallbackImages.length]
+  const images = product.image_urls_json?.length ? product.image_urls_json : [fallbackImages[index % fallbackImages.length]]
+  const image = images[0]
   const overview = product.description ?? `${product.name} is curated for daily health support.`
-  const inStock = typeof product.in_stock === "boolean" ? product.in_stock : true
+  const inStock = typeof product.in_stock === "boolean"
+    ? product.in_stock
+    : typeof product.available_qty === "number"
+      ? product.available_qty > 0
+      : true
 
   return {
     id: product.id,
@@ -58,6 +64,7 @@ export function mapProductToMedicine(product: PharmacyProduct, index = 0): Medic
     kind: product.category ?? "Tablet",
     inStock,
     image,
+    images,
     price: Number(product.base_price_inr ?? 0),
     overview,
     uses: buildFallbackUses(product.name),

@@ -5,7 +5,6 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiMessageCircle,
-  FiShield,
   FiShoppingCart,
   FiStar,
   FiZap,
@@ -17,7 +16,7 @@ import { useCart } from "../../app/cart"
 import { playAppSound } from "../../utils/sound"
 import "./medicine-detail.css"
 
-type PanelId = "about" | "uses" | "dose" | "safety"
+type PanelId = "about" | "uses" | "dose"
 
 export default function MedicineDetail() {
   const navigate = useNavigate()
@@ -33,7 +32,6 @@ export default function MedicineDetail() {
   const [lastAddedName, setLastAddedName] = useState("")
   const { addItem, totalItems } = useCart()
 
-  const safetyScore = useMemo(() => 92, [])
   const upsells = useMemo(() => {
     const source = catalog.length ? catalog : medicines
     return source.filter((item) => item.id !== medicineId).slice(0, 3)
@@ -91,6 +89,8 @@ export default function MedicineDetail() {
   }
 
   const currentMedicine = medicine
+  const gallery = [currentMedicine.image, ...(currentMedicine.images ?? [])].filter(Boolean)
+  const [activeImage, setActiveImage] = useState(0)
 
   function togglePanel(id: PanelId) {
     setOpenPanel((prev) => (prev === id ? "about" : id))
@@ -135,15 +135,25 @@ export default function MedicineDetail() {
       <section className="medicine-detail-shell app-content-slide">
         <article className="medicine-hero-card app-fade-stagger">
           <div className="medicine-hero-media">
-            <img src={currentMedicine.image} alt={currentMedicine.name} />
+            <img src={gallery[activeImage] || currentMedicine.image} alt={currentMedicine.name} />
             <span className="hero-pill"><FiStar /> Trusted medicine</span>
           </div>
+          <div className="medicine-gallery">
+            {gallery.slice(0, 5).map((img, index) => (
+              <button
+                key={`${img}-${index}`}
+                type="button"
+                className={`gallery-thumb app-pressable ${activeImage === index ? "active" : ""}`}
+                onClick={() => setActiveImage(index)}
+              >
+                <img src={img} alt={`${currentMedicine.name} ${index + 1}`} />
+              </button>
+            ))}
+          </div>
           <div className="medicine-hero-copy">
-            <h2>{currentMedicine.name}</h2>
-            <p>{currentMedicine.dose} • {currentMedicine.kind}</p>
-            <span className={currentMedicine.inStock ? "availability in" : "availability out"}>
-              {currentMedicine.inStock ? "Currently available" : "Currently unavailable"}
-            </span>
+            <h2>{currentMedicine.name} {currentMedicine.dose}</h2>
+            <p>{currentMedicine.kind}</p>
+            <span className="availability in">In 5 mins</span>
 
             <div className="hero-facts">
               <article>
@@ -155,8 +165,8 @@ export default function MedicineDetail() {
                 <strong>{currentMedicine.dose}</strong>
               </article>
               <article>
-                <small>Safety</small>
-                <strong>{safetyScore}%</strong>
+                <small>Brand</small>
+                <strong>{currentMedicine.name}</strong>
               </article>
             </div>
           </div>
@@ -164,7 +174,6 @@ export default function MedicineDetail() {
 
         <section className="insight-strip app-fade-stagger">
           <span><FiZap /> Best with water after food</span>
-          <span><FiShield /> Avoid self dose changes</span>
         </section>
 
         <article className={`medicine-section app-fade-stagger ${openPanel === "about" ? "expanded" : "collapsed"}`}>
@@ -203,24 +212,6 @@ export default function MedicineDetail() {
           )}
         </article>
 
-        <article className={`medicine-section app-fade-stagger ${openPanel === "safety" ? "expanded" : "collapsed"}`}>
-          <button className="section-toggle app-pressable" type="button" onClick={() => togglePanel("safety")}>
-            <h3>Safety Notes</h3>
-            {openPanel === "safety" ? <FiChevronUp /> : <FiChevronDown />}
-          </button>
-          {openPanel === "safety" && (
-            <>
-              <ul>
-                {currentMedicine.cautions.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-              <div className="medical-note">
-                <FiShield /> Always confirm dose and duration with your doctor.
-              </div>
-            </>
-          )}
-        </article>
 
         <section className="upsell-section app-fade-stagger">
           <div className="upsell-head">
