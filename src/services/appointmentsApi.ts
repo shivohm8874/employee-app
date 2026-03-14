@@ -14,6 +14,8 @@ export async function createAppointment(input: {
   patientSummary?: string
   symptomSnapshot?: Record<string, unknown>
   aiTriageSummary?: string
+  meetingJoinWindowStart?: string
+  meetingJoinWindowEnd?: string
 }) {
   return apiPost<{ appointmentId: string }, typeof input>('/appointments', input)
 }

@@ -546,6 +546,8 @@ export default function TeleConsultation() {
       source: "employee_booked",
       scheduledStart: start,
       scheduledEnd: end,
+      meetingJoinWindowStart: new Date(now.getTime() - 60 * 1000).toISOString(),
+      meetingJoinWindowEnd: end,
       status: "confirmed",
       reason: analysisQuery || selectedDoctorRecord.specialty,
       patientSummary: selectedSymptoms.join(", "),
