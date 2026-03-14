@@ -156,7 +156,7 @@ export default function AISymptomAnalyser() {
         <section className="flow-card app-fade-stagger">
           <div className="flow-card-head">
             <h2>Search your symptom</h2>
-            <p>AI suggests symptoms based on your recent chat and local conditions.</p>
+            <p>Write whatever you feel in easy words.</p>
           </div>
 
           <div className="analyser-search focus">
