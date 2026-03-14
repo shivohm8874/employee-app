@@ -5,6 +5,7 @@ import {
   FiBatteryCharging,
   FiBell,
   FiCreditCard,
+  FiDroplet,
   FiHeart,
   FiHome,
   FiMapPin,
