@@ -235,6 +235,16 @@
   margin-top: 16px;
 }
 
+.rx-results {
+  margin-top: 16px;
+}
+
+.rx-results-list {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
+}
+
 .section-row {
   display: flex;
   justify-content: space-between;
@@ -370,4 +380,51 @@
 
 .pharma-file {
   display: none;
+}
+
+.rx-processing-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+}
+
+.rx-processing-card {
+  width: min(90vw, 340px);
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 18px;
+  text-align: center;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+}
+
+.rx-processing-card h4 {
+  margin: 10px 0 4px;
+  font-size: 1.05rem;
+  font-family: "Satoshi", sans-serif;
+}
+
+.rx-processing-card p {
+  margin: 0;
+  color: #5b6474;
+  font-size: 0.9rem;
+}
+
+.rx-spinner {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 3px solid #e5e7eb;
+  border-top-color: #5a4dde;
+  animation: rxspin 0.9s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes rxspin {
+  to {
+    transform: rotate(360deg);
+  }
 }

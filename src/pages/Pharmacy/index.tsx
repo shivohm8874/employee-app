@@ -14,6 +14,7 @@ import {
 } from "react-icons/fi"
 import { useLocation, useNavigate } from "react-router-dom"
 import { fetchPharmacyProducts } from "../../services/pharmacyApi"
+import { parsePrescriptionImage } from "../../services/aiApi"
 import { mapProductToMedicine, medicines, type MedicineItem } from "./medicineData"
 import { goBackOrFallback } from "../../utils/navigation"
 import { useCart } from "../../app/cart"
@@ -47,6 +48,9 @@ export default function Pharmacy() {
   const [catalog, setCatalog] = useState<MedicineItem[]>([])
   const [loadingCatalog, setLoadingCatalog] = useState(true)
   const [activeCategory, setActiveCategory] = useState(state?.selectedCategory ?? "")
+  const [isProcessingRx, setIsProcessingRx] = useState(false)
+  const [rxProcessingNote, setRxProcessingNote] = useState("Reading prescription...")
+  const [rxMatches, setRxMatches] = useState<MedicineItem[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
@@ -84,11 +88,90 @@ export default function Pharmacy() {
     })
   }, [query, sourceItems, activeCategory])
 
-  function onPrescriptionPicked(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onPrescriptionPicked(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setUploadStatus(`Uploaded: ${file.name}`)
     e.target.value = ""
+
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+    const isImage = file.type.startsWith("image/")
+    if (!isPdf && !isImage) {
+      setUploadStatus("Please upload a PDF or image file only.")
+      return
+    }
+
+    if (isPdf) {
+      setUploadStatus(`Uploaded: ${file.name}. Use a photo for instant AI detection.`)
+      return
+    }
+
+    setUploadStatus(`Processing: ${file.name}`)
+    setRxProcessingNote("Reading prescription...")
+    setIsProcessingRx(true)
+    setRxMatches([])
+
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(String(reader.result || ""))
+        reader.onerror = () => reject(new Error("Unable to read file"))
+        reader.readAsDataURL(file)
+      })
+
+      setRxProcessingNote("Analyzing with AI...")
+      const parsed = await parsePrescriptionImage({
+        imageBase64: dataUrl,
+        fileName: file.name,
+        mimeType: file.type,
+      })
+
+      const names = parsed.medicines
+        .map((item) => item.name?.trim())
+        .filter((name): name is string => !!name)
+        .slice(0, 8)
+
+      if (names.length === 0) {
+        setUploadStatus("We could not detect medicines. Please upload a clearer photo.")
+        return
+      }
+
+      setRxProcessingNote("Matching medicines in inventory...")
+      const matches = await Promise.all(
+        names.map(async (name) => {
+          try {
+            const rows = await fetchPharmacyProducts({ search: name, limit: 1, audience: "employee" })
+            if (rows?.[0]) {
+              return mapProductToMedicine(rows[0], 0)
+            }
+            return null
+          } catch {
+            return null
+          }
+        })
+      )
+
+      const unique = new Map<string, MedicineItem>()
+      matches.forEach((item) => {
+        if (item && !unique.has(item.id)) {
+          unique.set(item.id, item)
+        }
+      })
+
+      const list = Array.from(unique.values())
+      if (list.length === 0) {
+        setUploadStatus("Prescription detected, but no matching inventory found.")
+        return
+      }
+
+      setRxMatches(list)
+      setUploadStatus(`Prescription processed. Found ${list.length} medicines.`)
+      setQuery("")
+      setActiveCategory("")
+    } catch {
+      setUploadStatus("Unable to process prescription right now. Please retry.")
+    } finally {
+      setIsProcessingRx(false)
+    }
   }
 
   function onPageScroll(e: React.UIEvent<HTMLElement>) {
@@ -164,6 +247,40 @@ export default function Pharmacy() {
           </div>
         </article>
 
+        {rxMatches.length > 0 && (
+          <section className="rx-results app-fade-stagger">
+            <div className="section-row">
+              <h3>Prescription Results</h3>
+              <button type="button" className="see-all app-pressable" onClick={() => navigate("/cart")}>
+                View Cart
+              </button>
+            </div>
+            <div className="rx-results-list">
+              {rxMatches.map((item) => (
+                <button
+                  key={item.id}
+                  className="medicine-card app-pressable"
+                  type="button"
+                  onClick={() => navigate(`/pharmacy/medicine/${item.id}`)}
+                >
+                  <div className="pill-icon">💊</div>
+                  <div className="medicine-info">
+                    <h4>{item.name} {item.dose}</h4>
+                    <p>{item.kind}</p>
+                    <div className="medicine-tags">
+                      <span className={item.inStock ? "stock" : "out"}>{item.inStock ? "In Stock" : "Out of Stock"}</span>
+                    </div>
+                    <span className="medicine-open">
+                      Product Overview
+                      <FiChevronRight />
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="category-section app-fade-stagger">
           <div className="section-row">
             <h3>Popular Categories</h3>
@@ -224,6 +341,16 @@ export default function Pharmacy() {
 
       <input ref={fileInputRef} type="file" accept=".pdf,image/*" className="pharma-file" onChange={onPrescriptionPicked} />
       <input ref={photoInputRef} type="file" accept="image/*" capture="environment" className="pharma-file" onChange={onPrescriptionPicked} />
+
+      {isProcessingRx && (
+        <div className="rx-processing-overlay">
+          <div className="rx-processing-card app-page-enter">
+            <div className="rx-spinner" aria-hidden="true" />
+            <h4>Analyzing prescription</h4>
+            <p>{rxProcessingNote}</p>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

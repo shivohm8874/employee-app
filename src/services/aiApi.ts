@@ -73,3 +73,20 @@ export async function getAiLabReadinessQuestions(input: {
     apiKey: apiKey || undefined,
   });
 }
+
+export async function parsePrescriptionImage(input: {
+  imageBase64: string;
+  fileName?: string;
+  mimeType?: string;
+}): Promise<{ medicines: Array<{ name: string; strength?: string }>; model: string }> {
+  const apiKey = import.meta.env.VITE_GROK_API_KEY?.trim();
+  return apiPost<
+    { medicines: Array<{ name: string; strength?: string }>; model: string },
+    { imageBase64: string; fileName?: string; mimeType?: string; apiKey?: string }
+  >("/ai/prescription-parse", {
+    imageBase64: input.imageBase64,
+    fileName: input.fileName,
+    mimeType: input.mimeType,
+    apiKey: apiKey || undefined,
+  });
+}
