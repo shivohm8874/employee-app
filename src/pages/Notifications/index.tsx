@@ -130,28 +130,22 @@ export default function Notifications() {
                     <small>{item.time}</small>
                   </div>
                   <p>{item.body}</p>
-                  {item.channel === "consult" && item.joinWindowStart && now < Date.parse(item.joinWindowStart) && (
-                    <p className="notif-wait">Join opens 1 minute before your slot.</p>
-                  )}
-                  {item.cta && (item.channel !== "consult" || !item.joinWindowStart || now >= Date.parse(item.joinWindowStart)) && (
+                  {item.cta && (
                     <button
                       className="notif-cta app-pressable"
                       type="button"
                       onClick={() => {
                         playAppSound("tap")
                         if (item.channel === "consult" && item.teleconsultSessionId && item.doctorId) {
-                          const canJoin = !item.joinWindowStart || now >= Date.parse(item.joinWindowStart)
-                          if (canJoin) {
-                            navigate("/teleconsultation", {
-                              state: {
-                                startVideo: true,
-                                selectedDoctorId: item.doctorId,
-                                teleconsultSessionId: item.teleconsultSessionId,
-                                scheduledAt: item.scheduledAt,
-                              },
-                            })
-                            return
-                          }
+                          navigate("/teleconsultation", {
+                            state: {
+                              startVideo: true,
+                              selectedDoctorId: item.doctorId,
+                              teleconsultSessionId: item.teleconsultSessionId,
+                              scheduledAt: item.scheduledAt,
+                            },
+                          })
+                          return
                         }
                         navigate(item.cta!.route)
                       }}
@@ -180,28 +174,22 @@ export default function Notifications() {
                     <small>{item.time}</small>
                   </div>
                   <p>{item.body}</p>
-                  {item.channel === "consult" && item.joinWindowStart && now < Date.parse(item.joinWindowStart) && (
-                    <p className="notif-wait">Join opens 1 minute before your slot.</p>
-                  )}
-                  {item.cta && (item.channel !== "consult" || !item.joinWindowStart || now >= Date.parse(item.joinWindowStart)) && (
+                  {item.cta && (
                     <button
                       className="notif-cta app-pressable"
                       type="button"
                       onClick={() => {
                         playAppSound("tap")
                         if (item.channel === "consult" && item.teleconsultSessionId && item.doctorId) {
-                          const canJoin = !item.joinWindowStart || now >= Date.parse(item.joinWindowStart)
-                          if (canJoin) {
-                            navigate("/teleconsultation", {
-                              state: {
-                                startVideo: true,
-                                selectedDoctorId: item.doctorId,
-                                teleconsultSessionId: item.teleconsultSessionId,
-                                scheduledAt: item.scheduledAt,
-                              },
-                            })
-                            return
-                          }
+                          navigate("/teleconsultation", {
+                            state: {
+                              startVideo: true,
+                              selectedDoctorId: item.doctorId,
+                              teleconsultSessionId: item.teleconsultSessionId,
+                              scheduledAt: item.scheduledAt,
+                            },
+                          })
+                          return
                         }
                         navigate(item.cta!.route)
                       }}

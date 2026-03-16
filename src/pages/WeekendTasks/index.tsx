@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react"
+﻿import { useEffect, useMemo, useState } from "react"
 import { FiArrowLeft, FiClock, FiLink, FiTarget } from "react-icons/fi"
 import { useNavigate } from "react-router-dom"
 import { goBackOrFallback } from "../../utils/navigation"
+import { getEmployeeAuthSession } from "../../services/authApi"
+import { completeWeekendChallenge, fetchWeekendChallenges, type WeekendChallenge } from "../../services/challengesApi"
 import "./weekendtasks.css"
 
 type Task = {
@@ -10,34 +12,75 @@ type Task = {
   desc: string
   coins: number
   level: "Easy" | "Medium" | "Hard"
-  type: "Physical" | "Mental" | "Health"
+  type: "Physical" | "Mental" | "Health" | "Lifestyle"
   duration: string
   done?: boolean
 }
 
-const allTasks: Task[] = [
-  { id: "walk", title: "30-Minute Morning Walk", desc: "Start your weekend fresh with a morning walk in nature", coins: 150, level: "Easy", type: "Physical", duration: "30 min" },
-  { id: "meditation", title: "Mindfulness Meditation", desc: "Practice 20 minutes of guided meditation", coins: 200, level: "Medium", type: "Mental", duration: "20 min" },
-  { id: "meal-prep", title: "Healthy Meal Prep", desc: "Prepare nutritious meals for the week ahead", coins: 250, level: "Medium", type: "Health", duration: "1 hour", done: true },
-  { id: "yoga", title: "Yoga Session", desc: "Complete a full body yoga routine", coins: 180, level: "Medium", type: "Physical", duration: "45 min" },
-  { id: "journal", title: "Journaling Practice", desc: "Reflect on your week and set intentions", coins: 120, level: "Easy", type: "Mental", duration: "15 min", done: true },
-  { id: "hydration", title: "Hydration Challenge", desc: "Drink 8 glasses of water today", coins: 100, level: "Easy", type: "Health", duration: "All day" },
-  { id: "detox", title: "Digital Detox Hour", desc: "Spend 1 hour completely offline", coins: 150, level: "Hard", type: "Mental", duration: "1 hour" },
-  { id: "steps", title: "10,000 Steps Goal", desc: "Reach your daily step goal", coins: 200, level: "Medium", type: "Physical", duration: "All day" },
-]
-
 export default function WeekendTasks() {
   const navigate = useNavigate()
-  const [tasks, setTasks] = useState<Task[]>(allTasks)
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [weekStart, setWeekStart] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const session = getEmployeeAuthSession()
 
   const completed = useMemo(() => tasks.filter((task) => task.done).length, [tasks])
   const earned = useMemo(() => tasks.filter((task) => task.done).reduce((sum, task) => sum + task.coins, 0), [tasks])
   const remaining = useMemo(() => tasks.filter((task) => !task.done).reduce((sum, task) => sum + task.coins, 0), [tasks])
 
-  function toggleTask(id: string) {
-    setTasks((prev) =>
-      prev.map((task) => (task.id === id ? { ...task, done: !task.done } : task)),
-    )
+  useEffect(() => {
+    let active = true
+    if (!session?.userId) {
+      setLoading(false)
+      setError("Employee session missing. Please login again.")
+      return
+    }
+
+    async function loadChallenges() {
+      setLoading(true)
+      setError("")
+      try {
+        const data = await fetchWeekendChallenges(session.userId)
+        if (!active) return
+        setWeekStart(data.weekStart)
+        const mapped = data.challenges.map((item: WeekendChallenge) => ({
+          id: item.id,
+          title: item.title,
+          desc: item.description,
+          coins: item.points,
+          level: item.difficulty,
+          type: item.category,
+          duration: item.duration,
+          done: item.completed,
+        }))
+        setTasks(mapped)
+      } catch (err) {
+        if (!active) return
+        setError(err instanceof Error ? err.message : "Unable to load challenges")
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
+    loadChallenges()
+    const interval = window.setInterval(loadChallenges, 30000)
+    return () => {
+      active = false
+      window.clearInterval(interval)
+    }
+  }, [session?.userId])
+
+  async function toggleTask(id: string) {
+    if (!session?.userId) return
+    const target = tasks.find((task) => task.id === id)
+    if (!target || target.done) return
+    setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, done: true } : task)))
+    try {
+      await completeWeekendChallenge(session.userId, id)
+    } catch {
+      setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, done: false } : task)))
+    }
   }
 
   return (
@@ -60,21 +103,23 @@ export default function WeekendTasks() {
               <p>Weekend Progress</p>
               <h2>{completed} / {tasks.length} Tasks</h2>
             </div>
-            <span className="trophy">🏆</span>
+            <span className="trophy">Trophy</span>
           </div>
           <div className="progress-track">
-            <span style={{ width: `${(completed / tasks.length) * 100}%` }} />
+            <span style={{ width: `${tasks.length ? (completed / tasks.length) * 100 : 0}%` }} />
           </div>
 
           <div className="progress-metrics">
             <article><span>Earned</span><strong>{earned}</strong></article>
             <article><span>Remaining</span><strong>{remaining}</strong></article>
-            <article><span>Streak</span><strong>3 weeks</strong></article>
+            <article><span>Week</span><strong>{weekStart || "This week"}</strong></article>
           </div>
         </article>
 
         <section className="tasks-list app-fade-stagger">
           <h3>Your Tasks</h3>
+          {loading && <p>Loading weekend challenges...</p>}
+          {error && !loading && <p>{error}</p>}
           {tasks.map((task) => (
             <button
               key={task.id}
@@ -82,7 +127,7 @@ export default function WeekendTasks() {
               type="button"
               onClick={() => toggleTask(task.id)}
             >
-              <span className={`task-check ${task.done ? "active" : ""}`}>{task.done ? "✓" : ""}</span>
+              <span className={`task-check ${task.done ? "active" : ""}`}>{task.done ? "Done" : ""}</span>
               <div className="task-main">
                 <div className="task-title">
                   <h4>{task.title}</h4>
@@ -101,12 +146,12 @@ export default function WeekendTasks() {
 
         <article className="bonus-card app-fade-stagger">
           <h4>Weekend Bonus Challenge</h4>
-          <p>Complete all 8 tasks this weekend to earn a special bonus!</p>
+          <p>Complete all {tasks.length} tasks this weekend to earn a special bonus.</p>
           <div className="bonus-tags">
             <span>+1000 Bonus Coins</span>
             <span>Limited Time</span>
           </div>
-          <i>🏆</i>
+          <i>Trophy</i>
         </article>
       </section>
     </main>

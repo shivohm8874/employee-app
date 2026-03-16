@@ -61,14 +61,11 @@ export default function Bookings() {
 
         <div className="notice-list app-fade-stagger">
           {items.map((item: any) => {
-            const canJoin = item.joinWindowStart ? now >= Date.parse(item.joinWindowStart) : false
+            const canJoin = Boolean(item.sessionId)
             return (
               <article className="notice-item" key={item.id || item.title}>
                 <h4>{item.title}</h4>
                 <small>{item.at}</small>
-                {!canJoin && item.joinWindowStart && (
-                  <span className="notice-meta">Join opens 1 minute before the slot.</span>
-                )}
                 {canJoin && item.sessionId && (
                   <button
                     className="app-pressable"

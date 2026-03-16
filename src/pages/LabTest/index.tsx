@@ -34,13 +34,33 @@ type LabTestItem = {
   quick?: string
 }
 
-const SYMPTOM_CHIPS = ["Typhoid", "High Sugar", "High BP", "Thyroid", "Fever"]
+const SYMPTOM_CHIPS = [
+  "Fever",
+  "Cough",
+  "Cold",
+  "Headache",
+  "Body Pain",
+  "High Sugar",
+  "High BP",
+  "Thyroid",
+  "Vitamin D",
+  "Fatigue",
+  "Allergy",
+  "Typhoid",
+]
 const SYMPTOM_KEYWORDS: Record<string, string[]> = {
   Typhoid: ["typhoid", "widal", "salmonella", "fever profile"],
   "High Sugar": ["hba1c", "blood sugar", "glucose", "diabetes"],
   "High BP": ["lipid", "kidney", "creatinine", "electrolyte", "ecg"],
   Thyroid: ["thyroid", "tsh", "t3", "t4"],
   Fever: ["cbc", "crp", "esr", "dengue", "malaria", "fever"],
+  Cough: ["cbc", "crp", "esr", "chest", "infection", "allergy"],
+  Cold: ["cbc", "crp", "esr", "infection"],
+  Headache: ["cbc", "thyroid", "vitamin d", "b12"],
+  "Body Pain": ["cbc", "vitamin d", "crp", "esr"],
+  "Vitamin D": ["vitamin d"],
+  Fatigue: ["cbc", "vitamin b12", "vitamin d", "thyroid"],
+  Allergy: ["cbc", "ige", "allergy"],
 }
 
 const INTENT_KEYWORD_HINTS: Array<{ trigger: RegExp; keywords: string[] }> = [
@@ -347,6 +367,8 @@ export default function LabTestsStep1() {
         if (matches.size > 0) {
           const intentResults = Array.from(matches.values())
           setQueryResolvedTests(intentResults)
+          searchCacheRef.current.set(cacheKey, intentResults)
+          return
         }
 
         if (q.length >= 3) {
@@ -461,7 +483,10 @@ export default function LabTestsStep1() {
   }, [fetchPage, hasMore, loadError, loading, loadingMore, nextOffset])
 
   async function applyAiSymptomFilter(symptom: string) {
-    setQuery("")
+    setQuery(symptom)
+    setActiveFilter("All")
+    setAiFilteredTestIds(null)
+    setQueryResolvedTests(null)
     setAiFiltering(true)
 
     try {
@@ -472,12 +497,39 @@ export default function LabTestsStep1() {
       })
       const matchedIds = new Set<string>(locallyMatched.map((item) => item.id))
 
+      if (matchedIds.size > 0) {
+        const localResults = allTests.filter((test) => matchedIds.has(test.id))
+        setQueryResolvedTests(localResults)
+        return
+      }
+
+      const intentKeywords = (SYMPTOM_KEYWORDS[symptom] ?? [symptom]).slice(0, 6)
+      const remoteMatches = new Map<string, LabTestItem>()
+      await Promise.all(
+        intentKeywords.map(async (keyword) => {
+          try {
+            const remote = await getLabCatalog(keyword, 6, 0)
+            for (const t of remote.tests) {
+              remoteMatches.set(t.id, toLabTestItem(t))
+            }
+          } catch {
+            // Ignore per-keyword failure.
+          }
+        })
+      )
+
+      if (remoteMatches.size > 0) {
+        setQueryResolvedTests(Array.from(remoteMatches.values()))
+        return
+      }
+
       const result = await askAiChat({
         message: `User symptom focus: ${symptom}. Suggest the most relevant lab tests.`,
         history: [],
       })
 
       const suggestions = result.suggestedTests ?? []
+      const aiMatches = new Map<string, LabTestItem>()
       await Promise.all(
         suggestions.map(async (s) => {
           const name = s.name.toLowerCase().trim()
@@ -485,14 +537,14 @@ export default function LabTestsStep1() {
             test.name.toLowerCase().includes(name) || name.includes(test.name.toLowerCase())
           )
           if (match) {
-            matchedIds.add(match.id)
+            aiMatches.set(match.id, match)
             return
           }
 
           try {
             const remote = await getLabCatalog(s.name, 3, 0)
             for (const t of remote.tests) {
-              matchedIds.add(t.id)
+              aiMatches.set(t.id, toLabTestItem(t))
             }
           } catch {
             // Ignore per-suggestion failure.
@@ -500,9 +552,9 @@ export default function LabTestsStep1() {
         })
       )
 
-      setAiFilteredTestIds(matchedIds.size > 0 ? matchedIds : null)
+      setQueryResolvedTests(aiMatches.size > 0 ? Array.from(aiMatches.values()) : [])
     } catch {
-      setAiFilteredTestIds(null)
+      setQueryResolvedTests([])
     } finally {
       setAiFiltering(false)
     }
@@ -598,19 +650,20 @@ export default function LabTestsStep1() {
         </button>
       </div>
 
-      <div className="active-filter-line">
-        <span>Filter: {activeFilter}</span>
-        <span>
-          {loading
-            ? "Loading..."
-            : aiFiltering
-              ? "AI filtering..."
-              : queryResolving
-                ? "Finding best matches..."
-              : `${filteredTests.length} of ${total || filteredTests.length}`}
-        </span>
-        {onlyQuick && <span className="active-quick">Quick only</span>}
-      </div>
+      {(loading || aiFiltering || queryResolving || onlyQuick) && (
+        <div className="active-filter-line">
+          <span>
+            {loading
+              ? "Loading..."
+              : aiFiltering
+                ? "AI filtering..."
+                : queryResolving
+                  ? "Finding best matches..."
+                  : ""}
+          </span>
+          {onlyQuick && <span className="active-quick">Quick only</span>}
+        </div>
+      )}
 
       <div className="lab-list">
         {loadError && (

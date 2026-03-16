@@ -8,13 +8,37 @@ type LabTestItem = {
   color: "red" | "blue" | "gray" | "green" | "outline"
   name: string
   desc: string
+  code?: string
   tag?: string
   duration?: string
   fasting?: string
 }
 
-const DATES = ["Today", "Tomorrow", "Wed 26", "Thu 27"]
 const TIMES = ["6:00 AM", "8:00 AM", "10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM"]
+
+function formatDateLabel(date: Date) {
+  const today = new Date()
+  const sameDay = date.toDateString() === today.toDateString()
+  const tomorrow = new Date(today)
+  tomorrow.setDate(today.getDate() + 1)
+  if (sameDay) return "Today"
+  if (date.toDateString() === tomorrow.toDateString()) return "Tomorrow"
+  return date.toLocaleDateString(undefined, { weekday: "short", day: "2-digit", month: "short" })
+}
+
+function buildDateOptions() {
+  const options: Array<{ label: string; value: string }> = []
+  const today = new Date()
+  for (let i = 0; i < 4; i += 1) {
+    const next = new Date(today)
+    next.setDate(today.getDate() + i)
+    options.push({
+      label: formatDateLabel(next),
+      value: next.toISOString().slice(0, 10),
+    })
+  }
+  return options
+}
 
 export default function LabScheduleLater() {
   const navigate = useNavigate()
@@ -26,7 +50,8 @@ export default function LabScheduleLater() {
       readiness?: Record<string, "yes" | "no">
     }
   }
-  const [date, setDate] = useState("Tomorrow")
+  const dateOptions = buildDateOptions()
+  const [date, setDate] = useState(dateOptions[1]?.value ?? dateOptions[0]?.value ?? "")
   const [time, setTime] = useState("10:00 AM")
 
   const test =
@@ -80,14 +105,14 @@ export default function LabScheduleLater() {
 
         <p className="label">Preferred Date</p>
         <div className="date-grid">
-          {DATES.map((item) => (
+          {dateOptions.map((item) => (
             <button
-              key={item}
-              className={`slot-btn ${date === item ? "active" : ""}`}
-              onClick={() => setDate(item)}
+              key={item.value}
+              className={`slot-btn ${date === item.value ? "active" : ""}`}
+              onClick={() => setDate(item.value)}
               type="button"
             >
-              {item}
+              {item.label}
             </button>
           ))}
         </div>

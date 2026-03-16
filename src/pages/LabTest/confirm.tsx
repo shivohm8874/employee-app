@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { FiArrowLeft, FiCalendar, FiCheck, FiMapPin } from "react-icons/fi"
+import { FiAlertCircle, FiArrowLeft, FiCalendar, FiCheck, FiMapPin } from "react-icons/fi"
 import { RiTestTubeLine } from "react-icons/ri"
 import { useLocation, useNavigate } from "react-router-dom"
 import { ensureEmployeeActor } from "../../services/actorsApi"
@@ -9,12 +9,16 @@ import { goBackOrFallback } from "../../utils/navigation"
 import "./labtest.css"
 
 type LabTestItem = {
+  id?: string
+  code?: string
   name: string
 }
 
 export default function LabConfirm() {
   const navigate = useNavigate()
-  const [phase, setPhase] = useState<"processing" | "confirmed">("processing")
+  const [phase, setPhase] = useState<"processing" | "confirmed" | "failed">("processing")
+  const [bookingId, setBookingId] = useState<string>("")
+  const [errorMessage, setErrorMessage] = useState<string>("")
   const { state } = useLocation() as {
     state?: {
       selectedTest?: LabTestItem
@@ -43,27 +47,39 @@ export default function LabConfirm() {
           email: "employee@astikan.local",
         })
 
-        await bookLabOrder({
+        const response = await bookLabOrder({
           companyReference: employee.companyId,
           companyName: companySession?.companyName ?? "Astikan",
           email: employee.email,
           customer_name: "Astikan Employee",
           mobile: "9999999999",
           test_name: selectedTest,
+          test_id: state?.selectedTest?.id,
+          testid: state?.selectedTest?.id,
+          test_code: state?.selectedTest?.code,
+          test_parameter: state?.selectedTest?.name,
           amount: 999,
           date: state?.date,
           time: state?.time,
           collection_type: collectionType,
           readiness: state?.readiness ?? {},
         })
-      } catch {
-        // Keep the confirmation UX resilient even if upstream booking is temporarily unavailable.
-      } finally {
-        if (active) {
-          window.setTimeout(() => {
-            if (active) setPhase("confirmed")
-          }, 1200)
+        const ref =
+          (response?.providerReference as string | undefined) ??
+          (response?.reference_id as string | undefined) ??
+          (response?.order_id as string | undefined) ??
+          (response?.localOrderId as string | undefined)
+        if (response?.success && ref) {
+          setBookingId(String(ref))
+          if (active) setPhase("confirmed")
+        } else {
+          setErrorMessage("Booking could not be confirmed yet.")
+          if (active) setPhase("failed")
         }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Booking failed."
+        setErrorMessage(message)
+        if (active) setPhase("failed")
       }
     })()
 
@@ -102,7 +118,7 @@ export default function LabConfirm() {
           <h2>Processing Booking...</h2>
           <p>Please wait while we confirm your lab appointment</p>
         </div>
-      ) : (
+      ) : phase === "confirmed" ? (
         <>
           <div className="confirm-top">
             <div className="confirm-check pulse">
@@ -133,14 +149,24 @@ export default function LabConfirm() {
               </div>
             </div>
 
-            <div className="detail-item">
-              <RiTestTubeLine />
-              <div>
-                <span>Tests Selected</span>
-                <strong>{selectedTest}</strong>
-              </div>
+          <div className="detail-item">
+            <RiTestTubeLine />
+            <div>
+              <span>Tests Selected</span>
+              <strong>{selectedTest}</strong>
             </div>
           </div>
+
+          {bookingId && (
+            <div className="detail-item">
+              <FiFileText />
+              <div>
+                <span>Booking ID</span>
+                <strong>{bookingId}</strong>
+              </div>
+            </div>
+          )}
+        </div>
 
           <div className="bottom-buttons single">
             <button className="btn-primary" onClick={() => navigate("/home")} type="button">
@@ -148,6 +174,17 @@ export default function LabConfirm() {
             </button>
           </div>
         </>
+      ) : (
+        <div className="confirm-top">
+          <div className="confirm-check confirm-check--pending">
+            <span className="confirm-check-inner">
+              <FiAlertCircle />
+            </span>
+          </div>
+          <h2>Booking Pending</h2>
+          <p>{errorMessage || "We couldn't confirm the booking yet. Please try again in a moment."}</p>
+          <p>We are retrying this booking automatically and will update your status.</p>
+        </div>
       )}
     </div>
   )

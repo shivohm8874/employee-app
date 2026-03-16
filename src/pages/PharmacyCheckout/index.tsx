@@ -60,7 +60,7 @@ export default function PharmacyCheckout() {
         handle: "astikan-employee",
         email: "employee@astikan.local",
       })
-      await createPharmacyOrder({
+      const result = await createPharmacyOrder({
         companyReference: employee.companyId,
         companyName: companySession?.companyName ?? "Astikan",
         employee: {
@@ -84,6 +84,9 @@ export default function PharmacyCheckout() {
           imageUrls: [item.image],
         })),
       })
+      if (!result?.orderId) {
+        throw new Error("Order not confirmed")
+      }
       await addNotification({
         title: "Order confirmed",
         body: "Your medicines are confirmed. Live tracking is now available.",

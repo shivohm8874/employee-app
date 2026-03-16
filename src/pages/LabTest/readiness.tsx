@@ -13,6 +13,7 @@ type LabTestItem = {
   duration: string
   fasting: string
   quick?: string
+  code?: string
 }
 
 type ReadinessState = {

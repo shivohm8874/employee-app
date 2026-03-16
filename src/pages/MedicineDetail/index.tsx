@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+﻿import { useEffect, useMemo, useRef, useState } from "react"
 import {
   FiArrowLeft,
   FiChevronDown,
@@ -161,10 +161,14 @@ export default function MedicineDetail() {
             ))}
           </div>
           <div className="medicine-hero-copy">
-            <h2>{currentMedicine.name}</h2>
-            <span className="medicine-title-dose">{currentMedicine.dose}</span>
+            <div className="medicine-hero-head">
+              <div>
+                <h2>{currentMedicine.name}</h2>
+                <span className="medicine-title-dose">{currentMedicine.dose}</span>
+              </div>
+              <span className="availability in">In 5 mins</span>
+            </div>
             <p>{currentMedicine.kind}</p>
-            <span className="availability in">In 5 mins</span>
 
             <div className="hero-facts">
               <article>
@@ -242,7 +246,7 @@ export default function MedicineDetail() {
                   <img src={item.image} alt={item.name} loading="lazy" />
                   <div>
                     <h4>{item.name}</h4>
-                    <p>{item.dose} � {item.kind}</p>
+                    <p>{item.dose} • {item.kind}</p>
                   </div>
                 </button>
                 <button type="button" className="upsell-add app-pressable" onClick={() => addToCart(item)} disabled={!item.inStock}>
@@ -319,4 +323,5 @@ export default function MedicineDetail() {
     </main>
   )
 }
+
 
