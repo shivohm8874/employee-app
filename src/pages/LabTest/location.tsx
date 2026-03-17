@@ -43,7 +43,11 @@ export default function LabLocationStep2() {
   const originMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const destinationMarkerRef = useRef<mapboxgl.Marker | null>(null)
 
-  const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN ?? ""
+  const mapboxTokenRaw = (import.meta as any).env?.VITE_MAPBOX_TOKEN
+  const mapboxToken =
+    typeof mapboxTokenRaw === "string" && mapboxTokenRaw.trim() && mapboxTokenRaw !== "undefined" && mapboxTokenRaw !== "null"
+      ? mapboxTokenRaw
+      : ""
   const NIRAMAYA_DELHI_ADDRESS =
     "NirAmaya PathLabs Private Limited, B-4, New Multan Nagar, Near Paschim Vihar Metro, Pillor No. 233, New Delhi-110056"
 
@@ -240,6 +244,9 @@ export default function LabLocationStep2() {
     })
 
     map.on("styledata", hideLabels)
+    map.on("error", () => {
+      setMapError("Map failed to load")
+    })
 
     map.scrollZoom.disable()
     map.boxZoom.disable()

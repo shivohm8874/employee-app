@@ -39,7 +39,11 @@ function mapStatusToStep(status: string) {
 export default function LabTracking() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN ?? ""
+  const mapboxTokenRaw = (import.meta as any).env?.VITE_MAPBOX_TOKEN
+  const mapboxToken =
+    typeof mapboxTokenRaw === "string" && mapboxTokenRaw.trim() && mapboxTokenRaw !== "undefined" && mapboxTokenRaw !== "null"
+      ? mapboxTokenRaw
+      : ""
   const [mapError, setMapError] = useState("")
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
@@ -182,6 +186,9 @@ export default function LabTracking() {
     })
 
     map.on("styledata", hideLabels)
+    map.on("error", () => {
+      setMapError("Map failed to load")
+    })
     map.scrollZoom.disable()
     map.boxZoom.disable()
     map.dragPan.disable()

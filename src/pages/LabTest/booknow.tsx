@@ -29,7 +29,11 @@ export default function LabBookNowStep3() {
     }
   }
 
-  const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN ?? ""
+  const mapboxTokenRaw = (import.meta as any).env?.VITE_MAPBOX_TOKEN
+  const mapboxToken =
+    typeof mapboxTokenRaw === "string" && mapboxTokenRaw.trim() && mapboxTokenRaw !== "undefined" && mapboxTokenRaw !== "null"
+      ? mapboxTokenRaw
+      : ""
   const [etaMinutes, setEtaMinutes] = useState<number | null>(null)
   const [displayEta, setDisplayEta] = useState<number | null>(null)
   const [mapError, setMapError] = useState("")
@@ -166,6 +170,9 @@ export default function LabBookNowStep3() {
     })
 
     map.on("styledata", hideLabels)
+    map.on("error", () => {
+      setMapError("Map failed to load")
+    })
 
     map.scrollZoom.disable()
     map.boxZoom.disable()
