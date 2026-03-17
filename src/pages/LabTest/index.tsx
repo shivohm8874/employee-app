@@ -278,7 +278,6 @@ export default function LabTestsStep1() {
       const mappedTests = cached.tests.map(toLabTestItem)
       setAllTests(mappedTests)
       setAllCategories(cached.categories.map((item) => item.name))
-      setTotal(cached.total)
       setNextOffset(mappedTests.length)
       setHasMore(mappedTests.length < cached.total)
       setLoading(false)

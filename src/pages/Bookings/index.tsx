@@ -87,7 +87,6 @@ export default function Bookings() {
     }
   }, [])
 
-  const now = Date.now()
   const current = teleBookings.map((booking) => {
     const scheduled = new Date(booking.scheduledAt)
     return {

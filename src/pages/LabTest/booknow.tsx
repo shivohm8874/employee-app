@@ -199,15 +199,16 @@ export default function LabBookNowStep3() {
 
     async function updateRoute() {
       try {
-        const origin = await geocodeAddress(state.address ?? "", controller.signal)
+        const origin = await geocodeAddress(state?.address ?? "", controller.signal)
         const destination = await geocodeAddress(NIRAMAYA_DELHI_ADDRESS, controller.signal)
         if (!origin || !destination) return
         const route = await fetchRoute(origin, destination)
         const map = mapRef.current
         if (!map) return
 
-        const geojson = {
+        const geojson: GeoJSON.Feature<GeoJSON.LineString> = {
           type: "Feature",
+          properties: {},
           geometry: {
             type: "LineString",
             coordinates: route.geometry?.coordinates ?? [],
@@ -216,11 +217,11 @@ export default function LabBookNowStep3() {
 
         if (map.getSource("route")) {
           const source = map.getSource("route") as mapboxgl.GeoJSONSource
-          source.setData(geojson as GeoJSON.Feature<GeoJSON.LineString>)
+          source.setData(geojson)
         } else {
           map.addSource("route", {
             type: "geojson",
-            data: geojson as GeoJSON.Feature<GeoJSON.LineString>,
+            data: geojson,
           })
           map.addLayer({
             id: "route-line",
@@ -378,3 +379,4 @@ export default function LabBookNowStep3() {
     </div>
   )
 }
+

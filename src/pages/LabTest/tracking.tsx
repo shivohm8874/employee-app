@@ -68,7 +68,7 @@ export default function LabTracking() {
     async function loadInitial() {
       try {
         if (!id) return
-        const actor = await ensureEmployeeActor({ companyReference: "astikan-demo-company", companyName: "Astikan" })
+        await ensureEmployeeActor({ companyReference: "astikan-demo-company", companyName: "Astikan" })
         const order = await getLabOrderById(id)
         if (!active || !order) return
         const mapped: LabBooking = {
