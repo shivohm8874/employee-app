@@ -276,13 +276,19 @@ export default function MetricDetails() {
   useEffect(() => {
     if (measureStage !== "done" || savedRef.current) return
     savedRef.current = true
-    void saveVitalReading({
-      metric: "heart_rate",
-      value: measureBpm,
-      unit: "bpm",
-      source: "camera",
-      signalQuality: Number(signalQuality.toFixed(2)),
-    })
+    void (async () => {
+      try {
+        await saveVitalReading({
+          metric: "heart_rate",
+          value: measureBpm,
+          unit: "bpm",
+          source: "camera",
+          signalQuality: Number(signalQuality.toFixed(2)),
+        })
+      } catch (error) {
+        console.warn("Failed to save vital reading", error)
+      }
+    })()
   }, [measureStage, measureBpm, signalQuality])
 
   return (
