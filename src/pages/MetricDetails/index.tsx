@@ -150,14 +150,12 @@ export default function MetricDetails() {
           audio: false,
         })
         streamRef.current = stream
-        const track = stream.getVideoTracks()[0] as MediaStreamTrack & {
-          getCapabilities?: () => { torch?: boolean }
-        }
+        const track = stream.getVideoTracks()[0]
         if (track) {
-          const caps = track.getCapabilities?.()
+          const caps = (track as any).getCapabilities?.()
           if (caps?.torch) {
             try {
-              await track.applyConstraints({ advanced: [{ torch: true }] } as MediaTrackConstraints)
+              await (track as any).applyConstraints({ advanced: [{ torch: true }] })
             } catch {
               // ignore torch failures
             }
