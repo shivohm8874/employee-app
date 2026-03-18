@@ -150,12 +150,14 @@ export default function MetricDetails() {
           audio: false,
         })
         streamRef.current = stream
-        const track = stream.getVideoTracks()[0]
+        const track = stream.getVideoTracks()[0] as MediaStreamTrack & {
+          getCapabilities?: () => { torch?: boolean }
+        }
         if (track) {
-          const caps = track.getCapabilities?.() as { torch?: boolean } | undefined
+          const caps = track.getCapabilities?.()
           if (caps?.torch) {
             try {
-              await track.applyConstraints({ advanced: [{ torch: true }] })
+              await track.applyConstraints({ advanced: [{ torch: true }] } as MediaTrackConstraints)
             } catch {
               // ignore torch failures
             }
@@ -163,7 +165,7 @@ export default function MetricDetails() {
         }
         if (videoRef.current) {
           videoRef.current.srcObject = stream
-          await videoRef.current.play()
+          await videoRef.current.play().catch(() => undefined)
         }
       } catch (error) {
         setCameraError(error instanceof Error ? error.message : "Camera permission denied.")
