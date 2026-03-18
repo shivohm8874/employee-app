@@ -121,7 +121,16 @@ export default function MetricDetails() {
         rafRef.current = null
       }
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop())
+        streamRef.current.getTracks().forEach((track) => {
+          if (track.kind === "video") {
+            try {
+              track.applyConstraints({ advanced: [{ torch: false }] })
+            } catch {
+              // ignore torch cleanup
+            }
+          }
+          track.stop()
+        })
         streamRef.current = null
       }
       return
@@ -133,10 +142,21 @@ export default function MetricDetails() {
     const start = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
+          video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
           audio: false,
         })
         streamRef.current = stream
+        const track = stream.getVideoTracks()[0]
+        if (track) {
+          const caps = track.getCapabilities?.() as { torch?: boolean } | undefined
+          if (caps?.torch) {
+            try {
+              await track.applyConstraints({ advanced: [{ torch: true }] })
+            } catch {
+              // ignore torch failures
+            }
+          }
+        }
         if (videoRef.current) {
           videoRef.current.srcObject = stream
           await videoRef.current.play()
@@ -177,29 +197,36 @@ export default function MetricDetails() {
         if (ctx) {
           ctx.drawImage(video, 0, 0, size, size)
           const image = ctx.getImageData(22, 22, 20, 20).data
-          let rSum = 0
+          let gSum = 0
           const count = image.length / 4
           for (let i = 0; i < image.length; i += 4) {
-            rSum += image[i]
+            gSum += image[i + 1]
           }
-          const avgR = rSum / count
-          samplesRef.current.push({ t: now, v: avgR })
+          const avgG = gSum / count
+          samplesRef.current.push({ t: now, v: avgG })
           const windowMs = 10000
           samplesRef.current = samplesRef.current.filter((s) => now - s.t <= windowMs)
 
           const values = samplesRef.current.map((s) => s.v)
           const mean = values.reduce((sum, v) => sum + v, 0) / (values.length || 1)
-          const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / (values.length || 1)
+          const detrended = values.map((v) => v - mean)
+          const variance = detrended.reduce((sum, v) => sum + Math.pow(v, 2), 0) / (detrended.length || 1)
           const std = Math.sqrt(variance)
-          const threshold = mean + std * 0.6
+          const threshold = std * 0.4
 
           const peaks: number[] = []
+          const minInterval = 380
+          let lastPeak = 0
           for (let i = 1; i < samplesRef.current.length - 1; i += 1) {
-            const prev = samplesRef.current[i - 1]
-            const curr = samplesRef.current[i]
-            const next = samplesRef.current[i + 1]
-            if (curr.v > threshold && curr.v > prev.v && curr.v >= next.v) {
-              peaks.push(curr.t)
+            const prev = detrended[i - 1]
+            const curr = detrended[i]
+            const next = detrended[i + 1]
+            if (curr > threshold && curr > prev && curr >= next) {
+              const t = samplesRef.current[i].t
+              if (!lastPeak || t - lastPeak > minInterval) {
+                peaks.push(t)
+                lastPeak = t
+              }
             }
           }
           if (peaks.length >= 2) {
