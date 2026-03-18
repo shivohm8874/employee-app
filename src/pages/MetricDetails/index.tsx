@@ -94,7 +94,11 @@ export default function MetricDetails() {
   const [measureBpm, setMeasureBpm] = useState(72)
   const [cameraError, setCameraError] = useState("")
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const measureStartRef = useRef<number | null>(null)
+  const samplesRef = useRef<Array<{ t: number; v: number }>>([])
+  const rafRef = useRef<number | null>(null)
   const history = metric.windows[windowKey]
 
   const max = Math.max(...history)
@@ -111,7 +115,11 @@ export default function MetricDetails() {
   }, [measureStage])
 
   useEffect(() => {
-    if (measureStage === "idle") {
+    if (measureStage === "idle" || measureStage === "done") {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop())
         streamRef.current = null
@@ -148,18 +156,75 @@ export default function MetricDetails() {
 
   useEffect(() => {
     if (measureStage !== "measuring") return
-    let progress = 0
-    const interval = window.setInterval(() => {
-      progress = Math.min(100, progress + Math.floor(Math.random() * 8) + 4)
+    const durationMs = 15000
+    measureStartRef.current = performance.now()
+    samplesRef.current = []
+
+    const tick = () => {
+      const now = performance.now()
+      const start = measureStartRef.current ?? now
+      const elapsed = now - start
+      const progress = Math.min(100, Math.round((elapsed / durationMs) * 100))
       setMeasureProgress(progress)
-      setMeasureBpm(70 + Math.floor(Math.random() * 12))
+
+      const video = videoRef.current
+      const canvas = canvasRef.current
+      if (video && canvas && video.readyState >= 2) {
+        const size = 64
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext("2d", { willReadFrequently: true })
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, size, size)
+          const image = ctx.getImageData(22, 22, 20, 20).data
+          let rSum = 0
+          const count = image.length / 4
+          for (let i = 0; i < image.length; i += 4) {
+            rSum += image[i]
+          }
+          const avgR = rSum / count
+          samplesRef.current.push({ t: now, v: avgR })
+          const windowMs = 10000
+          samplesRef.current = samplesRef.current.filter((s) => now - s.t <= windowMs)
+
+          const values = samplesRef.current.map((s) => s.v)
+          const mean = values.reduce((sum, v) => sum + v, 0) / (values.length || 1)
+          const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / (values.length || 1)
+          const std = Math.sqrt(variance)
+          const threshold = mean + std * 0.6
+
+          const peaks: number[] = []
+          for (let i = 1; i < samplesRef.current.length - 1; i += 1) {
+            const prev = samplesRef.current[i - 1]
+            const curr = samplesRef.current[i]
+            const next = samplesRef.current[i + 1]
+            if (curr.v > threshold && curr.v > prev.v && curr.v >= next.v) {
+              peaks.push(curr.t)
+            }
+          }
+          if (peaks.length >= 2) {
+            const diffs = peaks.slice(1).map((t, idx) => t - peaks[idx])
+            const avgDiff = diffs.reduce((sum, v) => sum + v, 0) / diffs.length
+            const bpm = Math.round(60000 / avgDiff)
+            if (bpm >= 45 && bpm <= 140) {
+              setMeasureBpm(bpm)
+            }
+          }
+        }
+      }
+
       if (progress >= 100) {
         setMeasureProgress(100)
-        setMeasureBpm(78)
         setMeasureStage("done")
+        return
       }
-    }, 480)
-    return () => window.clearInterval(interval)
+      rafRef.current = requestAnimationFrame(tick)
+    }
+
+    rafRef.current = requestAnimationFrame(tick)
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
   }, [measureStage])
 
   const startMeasurement = () => {
@@ -279,6 +344,7 @@ export default function MetricDetails() {
                 <video ref={videoRef} className="hr-camera" muted playsInline />
               )}
             </div>
+            <canvas ref={canvasRef} className="hr-camera-canvas" />
 
             <div
               className="hr-measure-ring"

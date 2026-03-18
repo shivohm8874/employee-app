@@ -301,6 +301,10 @@
   object-fit: cover;
 }
 
+.hr-camera-canvas {
+  display: none;
+}
+
 .hr-camera-error {
   color: #e2e8f0;
   font-size: 0.72rem;
