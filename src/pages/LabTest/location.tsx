@@ -260,7 +260,7 @@ export default function LabLocationStep2() {
     map.touchZoomRotate.disable()
 
     mapRef.current = map
-  }, [canRenderMap, mapboxToken])
+  }, [canRenderMap, mapboxToken, pageReady])
 
   useEffect(() => {
     if (!canRenderMap || !hasAddress) {
