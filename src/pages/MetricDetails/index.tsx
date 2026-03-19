@@ -99,6 +99,7 @@ export default function MetricDetails() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [historyOverride, setHistoryOverride] = useState<number[] | null>(null)
   const [latestOverride, setLatestOverride] = useState<number | null>(null)
+  const [saveTimeoutReached, setSaveTimeoutReached] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -285,6 +286,11 @@ export default function MetricDetails() {
   useEffect(() => {
     if (measureStage !== "done" || savedRef.current) return
     savedRef.current = true
+    setSaveTimeoutReached(false)
+    const timeoutId = window.setTimeout(() => {
+      setSaveTimeoutReached(true)
+      setSaveStatus("error")
+    }, 120000)
     const saveNow = async () => {
       try {
         setSaveStatus("saving")
@@ -308,13 +314,19 @@ export default function MetricDetails() {
             .map((point) => point.value)
           setHistoryOverride(values)
         }
+        window.clearTimeout(timeoutId)
       } catch (error) {
         setSaveStatus("error")
         console.warn("Failed to save vital reading", error)
-        retryTimerRef.current = window.setTimeout(saveNow, 4000)
+        if (!saveTimeoutReached) {
+          retryTimerRef.current = window.setTimeout(saveNow, 4000)
+        }
       }
     }
     void saveNow()
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
   }, [measureStage, measureBpm, signalQuality])
 
   useEffect(() => {
@@ -476,23 +488,54 @@ export default function MetricDetails() {
                 <span className="hr-signal-warning">Low signal. Cover camera and light fully.</span>
               )}
               {measureStage === "done" && saveStatus === "saving" && (
-                <span className="hr-signal-warning">Saving reading...</span>
+                <span className="hr-signal-warning">Saving to server...</span>
               )}
               {measureStage === "done" && saveStatus === "error" && (
-                <span className="hr-signal-warning">Retrying save... keep app open.</span>
+                <span className="hr-signal-warning">
+                  {saveTimeoutReached ? "Save timed out. Tap Retry." : "Retrying save... keep app open."}
+                </span>
               )}
               <div className="hr-wave" aria-hidden="true" />
             </div>
 
-            <button
-              className="measure-close app-pressable"
-              type="button"
-              onClick={() => setMeasureStage("idle")}
-              disabled={measureStage === "done" && saveStatus !== "saved"}
-            >
-              {measureStage === "done" ? "Done" : "Cancel"}
-            </button>
+            {measureStage === "done" && saveTimeoutReached ? (
+              <div className="hr-save-actions">
+                <button className="measure-close app-pressable" type="button" onClick={() => setMeasureStage("idle")}>
+                  Cancel
+                </button>
+                <button
+                  className="measure-close measure-close--primary app-pressable"
+                  type="button"
+                  onClick={() => {
+                    savedRef.current = false
+                    setSaveTimeoutReached(false)
+                    setSaveStatus("saving")
+                    setMeasureStage("done")
+                  }}
+                >
+                  Retry Save
+                </button>
+              </div>
+            ) : (
+              <button
+                className="measure-close app-pressable"
+                type="button"
+                onClick={() => setMeasureStage("idle")}
+                disabled={measureStage === "done" && saveStatus !== "saved"}
+              >
+                {measureStage === "done" ? "Done" : "Cancel"}
+              </button>
+            )}
           </section>
+        </div>
+      )}
+
+      {measureStage === "done" && saveStatus === "saving" && (
+        <div className="hr-save-blocker">
+          <div className="hr-save-card">
+            <span className="save-spinner" />
+            <p>Saving to server...</p>
+          </div>
         </div>
       )}
     </main>
