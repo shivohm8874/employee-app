@@ -128,7 +128,7 @@ export default function MetricDetails() {
         streamRef.current.getTracks().forEach((track) => {
           if (track.kind === "video") {
             try {
-              track.applyConstraints({ advanced: [{ torch: false }] })
+              ;(track as any).applyConstraints({ advanced: [{ torch: false }] })
             } catch {
               // ignore torch cleanup
             }
