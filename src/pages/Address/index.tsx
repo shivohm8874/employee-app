@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { getEmployeeCompanySession } from "../../services/authApi"
 import { getAddressProfile, saveHomeAddress } from "../../services/addressApi"
 import "../Settings/settings.css"
 
 const HOME_ADDRESS_KEY = "employee_home_address"
+const OFFICE_ADDRESS_KEY = "employee_office_address"
 
 export default function Address() {
   const navigate = useNavigate()
-  const companySession = getEmployeeCompanySession()
   const [homeAddress, setHomeAddress] = useState("")
+  const [officeAddress, setOfficeAddress] = useState("")
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [suggestions, setSuggestions] = useState<string[]>([])
@@ -21,13 +21,16 @@ export default function Address() {
   useEffect(() => {
     const raw = localStorage.getItem(HOME_ADDRESS_KEY)
     if (raw) setHomeAddress(raw)
+    const officeRaw = localStorage.getItem(OFFICE_ADDRESS_KEY)
+    if (officeRaw) setOfficeAddress(officeRaw)
     let active = true
     void (async () => {
       try {
         const { address } = await getAddressProfile()
-        if (!active || !address?.homeAddress) return
-        setHomeAddress(address.homeAddress)
-        if (typeof address.homeLat === "number" && typeof address.homeLon === "number") {
+        if (!active) return
+        if (address?.homeAddress) setHomeAddress(address.homeAddress)
+        if (address?.officeAddress) setOfficeAddress(address.officeAddress)
+        if (address && typeof address.homeLat === "number" && typeof address.homeLon === "number") {
           coordsRef.current = { lat: address.homeLat, lon: address.homeLon }
         }
       } catch {
@@ -51,8 +54,12 @@ export default function Address() {
           homeAddress: trimmed,
           homeLat: coordsRef.current?.lat ?? null,
           homeLon: coordsRef.current?.lon ?? null,
+          officeAddress: officeAddress.trim(),
         })
         localStorage.setItem(HOME_ADDRESS_KEY, trimmed)
+        if (officeAddress.trim()) {
+          localStorage.setItem(OFFICE_ADDRESS_KEY, officeAddress.trim())
+        }
         setSaved(true)
         window.setTimeout(() => setSaved(false), 1400)
       } catch (err) {
@@ -64,7 +71,7 @@ export default function Address() {
     return () => {
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current)
     }
-  }, [homeAddress])
+  }, [homeAddress, officeAddress])
 
   async function suggestFromGps() {
     if (!navigator.geolocation) {
@@ -153,8 +160,13 @@ export default function Address() {
         </article>
         <article className="account-card app-fade-stagger">
           <h3>Office Address</h3>
-          <p>{companySession?.companyName ?? "Company"} Campus, Madhapur, Hyderabad - 500084</p>
-          <p className="address-note">Provided by your corporate admin</p>
+          <textarea
+            rows={3}
+            placeholder="Enter your office address"
+            value={officeAddress}
+            onChange={(event) => setOfficeAddress(event.target.value)}
+          />
+          <p className="address-note">Used for office collection in lab booking</p>
         </article>
       </section>
     </main>

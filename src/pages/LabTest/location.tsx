@@ -6,6 +6,7 @@ import mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { getEmployeeAuthSession, getEmployeeCompanySession } from "../../services/authApi"
 import { fetchEmployeeProfile } from "../../services/employeeApi"
+import { getAddressProfile } from "../../services/addressApi"
 import "./labtest.css"
 
 type LabTestItem = {
@@ -158,20 +159,32 @@ export default function LabLocationStep2() {
   useEffect(() => {
     const session = getEmployeeAuthSession()
     const company = getEmployeeCompanySession()
-    setOfficeAddress(company?.companyName ? `${company.companyName} Campus` : "")
+    const fallbackOffice = company?.companyName ? `${company.companyName} Campus` : ""
+    setOfficeAddress(fallbackOffice)
 
     let active = true
     async function loadProfile() {
       if (!session?.userId) return
       try {
-        const profile = await fetchEmployeeProfile(session.userId)
+        const [addressResp, profile] = await Promise.all([
+          getAddressProfile().catch(() => ({ address: null })),
+          fetchEmployeeProfile(session.userId),
+        ])
         if (!active) return
         const fromProfile = formatAddress(profile?.address_json ?? undefined)
         const stored = localStorage.getItem("employee_home_address") ?? ""
-        setHomeAddress(fromProfile || stored)
+        const storedOffice = localStorage.getItem("employee_office_address") ?? ""
+        const dbHome = addressResp?.address?.homeAddress ?? ""
+        const dbOffice = addressResp?.address?.officeAddress ?? ""
+        setHomeAddress(dbHome || fromProfile || stored)
+        setOfficeAddress(dbOffice || storedOffice || fallbackOffice)
       } catch {
         const stored = localStorage.getItem("employee_home_address") ?? ""
-        if (active) setHomeAddress(stored)
+        const storedOffice = localStorage.getItem("employee_office_address") ?? ""
+        if (active) {
+          setHomeAddress(stored)
+          setOfficeAddress(storedOffice || fallbackOffice)
+        }
       }
     }
     loadProfile()

@@ -117,7 +117,6 @@ export default function WeekendTasks() {
           <h3>Your Tasks</h3>
           {error && !loading && <p>{error}</p>}
           {tasks.map((task) => {
-            const isActive = activeChallengeId && activeChallengeId === task.id
             const isBlocked = activeChallengeId && activeChallengeId !== task.id
             return (
               <button

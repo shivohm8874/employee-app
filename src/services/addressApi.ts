@@ -5,6 +5,9 @@ export type AddressRecord = {
   homeAddress?: string
   homeLat?: number | null
   homeLon?: number | null
+  officeAddress?: string
+  officeLat?: number | null
+  officeLon?: number | null
   updatedAt?: string
 }
 

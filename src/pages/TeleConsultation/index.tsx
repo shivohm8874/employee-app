@@ -159,6 +159,11 @@ const ZEGO_SERVER_URL = "wss://webliveroom515869344-api.coolzcloud.com/ws"
 const ZEGO_SERVER_URL_BACKUP = "wss://webliveroom515869344-api-bak.coolzcloud.com/ws"
 const LazyAgoraUIKit = lazy(() => import("agora-react-uikit"))
 
+const createZegoEngine = (appId: number, serverUrl: string) => {
+  const EngineCtor = ZegoExpressEngine as unknown as new (appId: number, serverUrl?: string) => any
+  return new EngineCtor(appId, serverUrl)
+}
+
 function getEmployeeRtcId() {
   const key = "astikan_employee_rtc_id"
   const existing = localStorage.getItem(key)
@@ -263,7 +268,7 @@ export default function TeleConsultation() {
   const [hasLocalStream, setHasLocalStream] = useState(false)
   const [zegoServerUsed, setZegoServerUsed] = useState<"primary" | "backup" | null>(null)
 
-  const zegoEngineRef = useRef<ZegoExpressEngine | null>(null)
+  const zegoEngineRef = useRef<any>(null)
   const zegoLocalStreamRef = useRef<MediaStream | null>(null)
   const zegoRemoteStreamIdRef = useRef<string | null>(null)
   const zegoRemoteStreamRef = useRef<MediaStream | null>(null)
@@ -271,7 +276,6 @@ export default function TeleConsultation() {
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null)
   const connectTimerRef = useRef<number | null>(null)
   const callClockRef = useRef<number | null>(null)
-  const employeeRtcIdRef = useRef(getEmployeeRtcId())
   const zegoBootstrapInProgressRef = useRef(false)
   const callExitHandledRef = useRef(false)
 
@@ -767,13 +771,19 @@ export default function TeleConsultation() {
       return
     }
 
-    let engine = new ZegoExpressEngine(appId, ZEGO_SERVER_URL)
+    let engine = createZegoEngine(appId, ZEGO_SERVER_URL)
     zegoEngineRef.current = engine
     setUsingZegoTemplate(true)
     setZegoServerUsed("primary")
     console.info("[Teleconsult][Zego] Initializing Express SDK (primary WS).")
 
-    engine.on("roomStreamUpdate", async (_roomID, updateType, streamList) => {
+    engine.on(
+      "roomStreamUpdate",
+      async (
+        _roomID: string,
+        updateType: "ADD" | "DELETE",
+        streamList: Array<{ streamID: string }>,
+      ) => {
       if (updateType === "ADD") {
         const streamID = streamList[0]?.streamID
         if (!streamID || streamID === `${rtc.userId}-main`) return
@@ -804,7 +814,8 @@ export default function TeleConsultation() {
           }
         }
       }
-    })
+      },
+    )
 
     try {
       await engine.loginRoom(
@@ -821,7 +832,7 @@ export default function TeleConsultation() {
       } catch {
         // ignore
       }
-      engine = new ZegoExpressEngine(appId, ZEGO_SERVER_URL_BACKUP)
+      engine = createZegoEngine(appId, ZEGO_SERVER_URL_BACKUP)
       zegoEngineRef.current = engine
       setZegoServerUsed("backup")
       console.warn("[Teleconsult][Zego] Primary WS failed. Switching to backup WS.")
@@ -832,7 +843,13 @@ export default function TeleConsultation() {
         { userUpdate: true },
       )
       console.info("[Teleconsult][Zego] Logged in to room (backup WS).")
-      engine.on("roomStreamUpdate", async (_roomID, updateType, streamList) => {
+      engine.on(
+        "roomStreamUpdate",
+        async (
+          _roomID: string,
+          updateType: "ADD" | "DELETE",
+          streamList: Array<{ streamID: string }>,
+        ) => {
         if (updateType === "ADD") {
           const streamID = streamList[0]?.streamID
           if (!streamID || streamID === `${rtc.userId}-main`) return
@@ -863,7 +880,8 @@ export default function TeleConsultation() {
             }
           }
         }
-      })
+        },
+      )
     }
 
     const localStream = await engine.createStream({ camera: { audio: true, video: true } })
@@ -1068,7 +1086,7 @@ export default function TeleConsultation() {
                 <button
                   className="app-pressable"
                   type="button"
-                  disabled={callState === "connecting" || usingZegoTemplate || usingAgoraTemplate}
+                  disabled={usingZegoTemplate || usingAgoraTemplate}
                   onClick={() => {
                     if (callState !== "ready") return
                     void bootstrapZegoTemplateCall(forceAgora ? "agora" : undefined)

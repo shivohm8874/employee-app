@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { FiArrowLeft, FiCamera, FiCheckCircle, FiChevronRight, FiDroplet, FiImage, FiInfo, FiMessageCircle } from "react-icons/fi"
+import { FiArrowLeft, FiCamera, FiCheckCircle, FiDroplet, FiImage, FiInfo, FiMessageCircle } from "react-icons/fi"
 import { useNavigate } from "react-router-dom"
-import { getEmployeeAuthSession } from "../../../services/authApi"
 import { logBehaviorSignal } from "../../../services/behaviorApi"
 import { getSugarChallengeState, getSugarCoachReply, saveSugarChallengeState } from "../../../services/sugarChallengeApi"
 import "./sugar-challenge.css"
@@ -86,7 +85,6 @@ function saveState(state: SugarChallengeState) {
 
 export default function SugarChallenge() {
   const navigate = useNavigate()
-  const session = getEmployeeAuthSession()
   const [step, setStep] = useState<ChallengeStep>("dashboard")
   const [state, setState] = useState<SugarChallengeState>(() => loadState())
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
@@ -218,7 +216,6 @@ export default function SugarChallenge() {
       type: "challenge_meal_logged",
       label: "Sugar Challenge",
       meta: { totalSugar: totalSugar, day: updated.day },
-      userId: session?.userId ?? undefined,
     })
     setStep("dashboard")
   }

@@ -7,7 +7,6 @@ import "./health-info.css"
 export default function HealthInfo() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [bloodGroup, setBloodGroup] = useState("B+")
   const [heightFt, setHeightFt] = useState("")
@@ -60,7 +59,6 @@ export default function HealthInfo() {
       window.clearTimeout(autosaveRef.current)
     }
     autosaveRef.current = window.setTimeout(async () => {
-      setSaving(true)
       setError("")
       try {
         await saveHealthProfile({
@@ -76,8 +74,6 @@ export default function HealthInfo() {
         })
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unable to save profile")
-      } finally {
-        setSaving(false)
       }
     }, 900)
 
