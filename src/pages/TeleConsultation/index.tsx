@@ -198,27 +198,6 @@ async function ensureTeleconsultActors(doctor: Doctor) {
   return { employee, doctor: doctorActor }
 }
 
-async function ensureDoctorDirectory() {
-  let doctors = await fetchDoctorDirectory({ limit: 12 })
-  if (doctors.length > 0) {
-    return doctors
-  }
-
-  await Promise.all(
-    DEMO_DOCTORS.map((doctor) =>
-      ensureDoctorActor({
-        email: `${doctor.handle}@doctor.astikan.local`,
-        fullName: doctor.fullName,
-        handle: doctor.handle,
-        specialization: doctor.specialization,
-      }),
-    ),
-  )
-
-  doctors = await fetchDoctorDirectory({ limit: 12 })
-  return doctors
-}
-
 function toAgoraNumericUid(value: string) {
   let hash = 0
   for (let index = 0; index < value.length; index += 1) {

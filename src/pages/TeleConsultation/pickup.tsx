@@ -81,7 +81,7 @@ export default function OpdPickup() {
     const response = await fetch(url)
     if (!response.ok) throw new Error("Unable to fetch route")
     const data = (await response.json()) as {
-      routes?: Array<{ geometry?: { coordinates: [number, number][] } }>
+      routes?: Array<{ geometry?: { coordinates: [number, number][] }; duration?: number }>
     }
     const route = data.routes?.[0]
     if (!route?.geometry?.coordinates) throw new Error("No route available")
