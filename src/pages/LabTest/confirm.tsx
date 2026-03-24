@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { FiAlertCircle, FiArrowLeft, FiCalendar, FiCheck, FiFileText, FiMapPin } from "react-icons/fi"
 import { RiTestTubeLine } from "react-icons/ri"
 import { useLocation, useNavigate } from "react-router-dom"
@@ -7,7 +7,8 @@ import { getEmployeeCompanySession } from "../../services/authApi"
 import { bookLabOrder } from "../../services/labApi"
 import { addNotification, pushBrowserNotification } from "../../services/notificationCenter"
 import { goBackOrFallback } from "../../utils/navigation"
-import { playAppSound } from "../../utils/sound"
+import successSound from "../../assets/audio/success.mp3"
+import failedSound from "../../assets/audio/Failed.wav"
 import "./labtest.css"
 
 type LabTestItem = {
@@ -49,6 +50,8 @@ export default function LabConfirm() {
   const [phase, setPhase] = useState<"processing" | "confirmed" | "failed">("processing")
   const [bookingId, setBookingId] = useState<string>("")
   const [errorMessage, setErrorMessage] = useState<string>("")
+  const successAudioRef = useRef<HTMLAudioElement | null>(null)
+  const failedAudioRef = useRef<HTMLAudioElement | null>(null)
   const { state } = useLocation() as {
     state?: {
       selectedTest?: LabTestItem
@@ -130,7 +133,11 @@ export default function LabConfirm() {
             "Lab booking confirmed",
             `${selectedTest} scheduled for ${collectionType}.`,
           )
-          playAppSound("success")
+          const audio = successAudioRef.current ?? new Audio(successSound)
+          audio.volume = 0.6
+          audio.currentTime = 0
+          successAudioRef.current = audio
+          audio.play().catch(() => undefined)
           setBookingId(bookingIdValue)
           if (active) setPhase("confirmed")
         } else {
@@ -141,11 +148,21 @@ export default function LabConfirm() {
             channel: "health",
             cta: { label: "View Booking", route: "/bookings" },
           })
+          const audio = failedAudioRef.current ?? new Audio(failedSound)
+          audio.volume = 0.6
+          audio.currentTime = 0
+          failedAudioRef.current = audio
+          audio.play().catch(() => undefined)
           if (active) setPhase("failed")
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : "Booking failed."
         setErrorMessage(message)
+        const audio = failedAudioRef.current ?? new Audio(failedSound)
+        audio.volume = 0.6
+        audio.currentTime = 0
+        failedAudioRef.current = audio
+        audio.play().catch(() => undefined)
         if (active) setPhase("failed")
       }
     })()

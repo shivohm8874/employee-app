@@ -9,6 +9,7 @@ import { getLabCatalog } from "../../services/labApi"
 import { fetchPharmacyProducts } from "../../services/pharmacyApi"
 import { mapProductToMedicine, type MedicineItem } from "../Pharmacy/medicineData"
 import { useCart } from "../../app/cart"
+import chatBubbleSound from "../../assets/audio/chatbubble.mp3"
 import "./aichat.css"
 
 type Message = {
@@ -165,6 +166,7 @@ export default function AIChat() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const prefillHandled = useRef(false)
   const chatBodyRef = useRef<HTMLDivElement>(null)
+  const chatSoundRef = useRef<HTMLAudioElement | null>(null)
 
   const messagesRef = useRef<Message[]>([])
 
@@ -255,6 +257,14 @@ export default function AIChat() {
   useEffect(() => {
     messagesRef.current = messages
   }, [messages])
+
+  function playChatBubbleSound() {
+    const audio = chatSoundRef.current ?? new Audio(chatBubbleSound)
+    audio.volume = 0.6
+    audio.currentTime = 0
+    chatSoundRef.current = audio
+    audio.play().catch(() => undefined)
+  }
 
   useEffect(() => {
     if (!threadId) return
@@ -456,6 +466,7 @@ export default function AIChat() {
     }
 
     setMessages((prev) => [...prev, userMessage])
+    playChatBubbleSound()
     setDraft("")
     setIsTyping(true)
 
@@ -470,6 +481,7 @@ export default function AIChat() {
 
       const aiMessage = await buildAiMessage(content, history)
       setMessages((prev) => [...prev, aiMessage])
+      playChatBubbleSound()
     } catch (_error: unknown) {
       setMessages((prev) => [
         ...prev,

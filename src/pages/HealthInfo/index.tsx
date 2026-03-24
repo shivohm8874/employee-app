@@ -20,6 +20,14 @@ export default function HealthInfo() {
   const autosaveRef = useRef<number | null>(null)
   const loadedRef = useRef(false)
 
+  const splitHeightFromCm = (cm?: number | null) => {
+    if (!cm || cm <= 0) return null
+    const totalIn = Math.round(cm / 2.54)
+    const ft = Math.floor(totalIn / 12)
+    const inches = totalIn - ft * 12
+    return { ft, inches }
+  }
+
   useEffect(() => {
     let active = true
     const load = async () => {
@@ -31,9 +39,12 @@ export default function HealthInfo() {
           setLoading(false)
           return
         }
+        const cmSplit = splitHeightFromCm(profile.heightCm ?? null)
+        const ftValue = profile.heightFt ?? cmSplit?.ft ?? null
+        const inValue = profile.heightIn ?? cmSplit?.inches ?? null
         setBloodGroup(profile.bloodGroup ?? "B+")
-        setHeightFt(profile.heightFt ? String(profile.heightFt) : "")
-        setHeightIn(profile.heightIn ? String(profile.heightIn) : "")
+        setHeightFt(ftValue !== null && ftValue !== undefined ? String(ftValue) : "")
+        setHeightIn(inValue !== null && inValue !== undefined ? String(inValue) : "")
         setWeightKg(profile.weightKg ? String(profile.weightKg) : "")
         setWaistIn(profile.waistIn ? String(profile.waistIn) : "")
         setAllergies(profile.allergies ?? "")
@@ -88,9 +99,9 @@ export default function HealthInfo() {
     const ft = Number(heightFt)
     const inch = Number(heightIn)
     const kg = Number(weightKg)
-    if (!ft && !inch) return null
-    const totalIn = ft * 12 + inch
-    if (!totalIn || !kg) return null
+    if (!ft || !kg) return null
+    const totalIn = ft * 12 + (Number.isFinite(inch) ? inch : 0)
+    if (!totalIn) return null
     const cm = totalIn * 2.54
     const m = cm / 100
     const value = kg / (m * m)
@@ -154,19 +165,39 @@ export default function HealthInfo() {
             </label>
             <label>
               <span>Height (ft)</span>
-              <input value={heightFt} onChange={(e) => setHeightFt(e.target.value.replace(/[^0-9]/g, ""))} placeholder="5" />
+              <input
+                value={heightFt}
+                onChange={(e) => setHeightFt(e.target.value.replace(/[^0-9]/g, ""))}
+                placeholder="5"
+                inputMode="numeric"
+              />
             </label>
             <label>
               <span>Height (in)</span>
-              <input value={heightIn} onChange={(e) => setHeightIn(e.target.value.replace(/[^0-9]/g, ""))} placeholder="7" />
+              <input
+                value={heightIn}
+                onChange={(e) => setHeightIn(e.target.value.replace(/[^0-9]/g, ""))}
+                placeholder="7"
+                inputMode="numeric"
+              />
             </label>
             <label>
               <span>Weight (kg)</span>
-              <input value={weightKg} onChange={(e) => setWeightKg(e.target.value.replace(/[^0-9]/g, ""))} placeholder="68" />
+              <input
+                value={weightKg}
+                onChange={(e) => setWeightKg(e.target.value.replace(/[^0-9]/g, ""))}
+                placeholder="68"
+                inputMode="numeric"
+              />
             </label>
             <label>
               <span>Waist (in)</span>
-              <input value={waistIn} onChange={(e) => setWaistIn(e.target.value.replace(/[^0-9]/g, ""))} placeholder="32" />
+              <input
+                value={waistIn}
+                onChange={(e) => setWaistIn(e.target.value.replace(/[^0-9]/g, ""))}
+                placeholder="32"
+                inputMode="numeric"
+              />
             </label>
           </div>
         </article>

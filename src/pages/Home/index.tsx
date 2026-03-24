@@ -28,7 +28,7 @@ import { getLatestVital } from "../../services/vitalsApi"
 import { fetchDailyTips, type DailyTipPayload } from "../../services/newsApi"
 import { fetchWeather, type WeatherSnapshot } from "../../services/weatherApi"
 import { healthTips, type HealthTip } from "../../data/healthTips"
-import { playAppSound } from "../../utils/sound"
+import warningAlarm from "../../assets/audio/warning.mp3"
 import "./home.css"
 
 
@@ -206,6 +206,7 @@ export default function Home() {
   const tipTouchStartX = useRef<number | null>(null)
   const pageRef = useRef<HTMLElement | null>(null)
   const sosAlarmRef = useRef<number | null>(null)
+  const sosAlarmAudioRef = useRef<HTMLAudioElement | null>(null)
   const scoreTarget = 90
 
   const [moodHint, setMoodHint] = useState("")
@@ -532,16 +533,28 @@ export default function Home() {
 
   function startSosAlarm() {
     if (sosAlarmRef.current) return
-    playAppSound("error")
+    const audio = sosAlarmAudioRef.current ?? new Audio(warningAlarm)
+    audio.loop = true
+    audio.volume = 0.75
+    audio.currentTime = 0
+    sosAlarmAudioRef.current = audio
+    audio.play().catch(() => undefined)
     sosAlarmRef.current = window.setInterval(() => {
-      playAppSound("error")
-    }, 1200)
+      if (audio.paused) {
+        audio.play().catch(() => undefined)
+      }
+    }, 2000)
   }
 
   function stopSosAlarm() {
     if (!sosAlarmRef.current) return
     window.clearInterval(sosAlarmRef.current)
     sosAlarmRef.current = null
+    const audio = sosAlarmAudioRef.current
+    if (audio) {
+      audio.pause()
+      audio.currentTime = 0
+    }
   }
 
   useEffect(() => {
