@@ -36,6 +36,7 @@ type Doctor = {
   eta: string
   fee: number
   avatar: string
+  fallbackAvatar: string
   practiceAddress?: string | null
 }
 
@@ -159,6 +160,20 @@ const DEFAULT_COMPANY_ID = "astikan-demo-company"
 const ZEGO_SERVER_URL = "wss://webliveroom515869344-api.coolzcloud.com/ws"
 const ZEGO_SERVER_URL_BACKUP = "wss://webliveroom515869344-api-bak.coolzcloud.com/ws"
 const LazyAgoraUIKit = lazy(() => import("agora-react-uikit"))
+
+
+function resolveAvatarUrl(avatar: string | null | undefined, fallback: string) {
+  if (!avatar) return fallback
+  const trimmed = avatar.trim()
+  if (!trimmed) return fallback
+  if (trimmed.startsWith("http") || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
+    return trimmed
+  }
+  if (trimmed.startsWith("/")) {
+    return trimmed
+  }
+  return `/assets/${trimmed.replace(/^assets\//, "")}`
+}
 
 const createZegoEngine = (appId: number, serverUrl: string) => {
   const EngineCtor = ZegoExpressEngine as unknown as new (appId: number, serverUrl?: string) => any
@@ -284,6 +299,7 @@ export default function TeleConsultation() {
     eta: "15 mins",
     fee: 28,
     avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=160&q=80",
+    fallbackAvatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=160&q=80",
     practiceAddress: null,
   }
 
@@ -292,6 +308,7 @@ export default function TeleConsultation() {
   const mapDoctorRows = (rows: DirectoryDoctor[]) =>
     rows.map((row, index) => {
       const fallback = DEMO_DOCTORS[index % DEMO_DOCTORS.length]
+      const fallbackAvatar = fallback.avatar
       return {
         id: row.user_id,
         name: row.full_name ?? row.full_display_name ?? fallback.fullName,
@@ -301,7 +318,8 @@ export default function TeleConsultation() {
         distance: fallback.distance,
         eta: fallback.eta,
         fee: Number(row.consultation_fee_inr ?? fallback.fee),
-        avatar: row.avatar_url ?? fallback.avatar,
+        avatar: resolveAvatarUrl(row.avatar_url, fallbackAvatar),
+        fallbackAvatar,
         practiceAddress: row.practice_address ?? null,
       }
     })
@@ -340,6 +358,7 @@ export default function TeleConsultation() {
             eta: doctor.eta,
             fee: doctor.fee,
             avatar: doctor.avatar,
+            fallbackAvatar: doctor.avatar,
             practiceAddress: null,
           })),
         )
@@ -1075,7 +1094,14 @@ export default function TeleConsultation() {
                     type="button"
                   >
                     <div className="doctor-avatar">
-                      <img src={doctor.avatar} alt={doctor.name} loading="lazy" />
+                      <img
+                        src={doctor.avatar}
+                        alt={doctor.name}
+                        loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.src = doctor.fallbackAvatar
+                        }}
+                      />
                     </div>
                     <div className="doctor-main">
                       <h4>{doctor.name}</h4>
