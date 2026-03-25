@@ -1,5 +1,6 @@
 ﻿import { apiGet, apiPost } from "./api"
 import { getEmployeeAuthSession } from "./authApi"
+import notificationSound from "../assets/audio/Notification.mp3"
 
 export type AppNotification = {
   id: string
@@ -101,7 +102,21 @@ export async function addNotification(input: Omit<AppNotification, "id" | "time"
   const item = await apiPost<any, typeof payload>("/notifications", payload)
   const normalized = normalizeItem(item)
   window.dispatchEvent(new CustomEvent("app-notification", { detail: normalized }))
+  void pushBrowserNotification(normalized.title, normalized.body)
+  playNotificationSound()
   return normalized
+}
+
+
+export function playNotificationSound() {
+  if (typeof window === "undefined") return
+  try {
+    const audio = new Audio(notificationSound)
+    audio.volume = 0.9
+    void audio.play()
+  } catch {
+    // ignore audio errors
+  }
 }
 
 export async function pushBrowserNotification(title: string, body: string) {
