@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import {
   FiArrowLeft,
-  FiBell,
   FiCalendar,
   FiCheckCircle,
   FiClock,
@@ -11,8 +10,7 @@ import {
   FiVideo,
 } from "react-icons/fi"
 import { useNavigate } from "react-router-dom"
-import { playAppSound } from "../../utils/sound"
-import { addNotification, fetchNotifications, markNotificationsRead, type AppNotification } from "../../services/notificationCenter"
+import { fetchNotifications, markNotificationsRead, type AppNotification } from "../../services/notificationCenter"
 import "./notifications.css"
 
 function channelIcon(channel: AppNotification["channel"]) {
@@ -24,7 +22,6 @@ function channelIcon(channel: AppNotification["channel"]) {
 
 export default function Notifications() {
   const navigate = useNavigate()
-  const [notifyState, setNotifyState] = useState("Push notifications are on")
   const [items, setItems] = useState<AppNotification[]>([])
 
   useEffect(() => {
@@ -53,38 +50,9 @@ export default function Notifications() {
 
   const unreadCount = items.filter((item) => item.unread).length
 
-  async function sendTestNotification() {
-    if (!("Notification" in window)) {
-      setNotifyState("Notifications are not supported in this browser")
-      playAppSound("error")
-      return
-    }
-
-    let permission = Notification.permission
-    if (permission !== "granted") {
-      permission = await Notification.requestPermission()
-    }
-
-    if (permission !== "granted") {
-      setNotifyState("Notification permission not granted")
-      playAppSound("error")
-      return
-    }
-
-    await addNotification({
-      title: "Rider picked your order",
-      body: "ETA 5 mins. Rider is near your area.",
-      channel: "delivery",
-      cta: { label: "Track Order", route: "/pharmacy/tracking" },
-    })
-    setNotifyState("Live test notification sent")
-    playAppSound("notify")
-  }
-
   function markAllRead() {
     setItems((prev) => prev.map((item) => ({ ...item, unread: false })))
     void markNotificationsRead()
-    playAppSound("success")
   }
 
   return (
@@ -104,17 +72,6 @@ export default function Notifications() {
       </header>
 
       <section className="notif-shell app-content-slide">
-        <article className="notif-live-card app-fade-stagger">
-          <div className="live-icon"><FiBell /></div>
-          <div>
-            <h3>Live Push Channel</h3>
-            <p>{notifyState}</p>
-          </div>
-          <button className="live-send app-pressable" onClick={sendTestNotification} type="button">
-            Send test
-          </button>
-        </article>
-
         <section className="notif-group app-fade-stagger">
           <div className="notif-group-head">
             <h2>Today</h2>
@@ -143,7 +100,6 @@ export default function Notifications() {
                       className="notif-cta app-pressable"
                       type="button"
                       onClick={() => {
-                        playAppSound("tap")
                         if (item.channel === "consult" && item.teleconsultSessionId && item.doctorId) {
                           navigate("/teleconsultation", {
                             state: {
@@ -187,7 +143,6 @@ export default function Notifications() {
                       className="notif-cta app-pressable"
                       type="button"
                       onClick={() => {
-                        playAppSound("tap")
                         if (item.channel === "consult" && item.teleconsultSessionId && item.doctorId) {
                           navigate("/teleconsultation", {
                             state: {
