@@ -25,6 +25,7 @@ export default function LabBookNowStep3() {
       selectedTest?: LabTestItem
       collectionType?: string
       address?: string
+      readinessQuestions?: Array<{ id: string; question: string; options: Array<{ value: string; label: string }> }>
       readiness?: Record<string, "yes" | "no">
     }
   }
@@ -340,6 +341,7 @@ export default function LabBookNowStep3() {
                 selectedTest: test,
                 collectionType: state?.collectionType,
                 address: state?.address,
+                readinessQuestions: state?.readinessQuestions,
                 readiness: state?.readiness,
               },
             })
@@ -360,6 +362,7 @@ export default function LabBookNowStep3() {
                 time: bookingTime,
                 etaMinutes: displayEta ?? etaMinutes ?? 15,
                 etaStartAt: new Date().toISOString(),
+                readinessQuestions: state?.readinessQuestions,
                 readiness: state?.readiness,
               },
             })

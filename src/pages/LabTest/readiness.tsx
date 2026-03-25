@@ -104,6 +104,7 @@ export default function LabReadinessStep() {
       navigate("/lab-tests/location", {
         state: {
           selectedTest,
+          readinessQuestions: questions,
           readiness: nextAnswers,
         },
       })

@@ -60,6 +60,7 @@ export default function LabConfirm() {
       time?: string
       etaMinutes?: number
       etaStartAt?: string
+      readinessQuestions?: Array<{ id: string; question: string; options: Array<{ value: string; label: string }> }>
       readiness?: Record<string, "yes" | "no">
     }
   }
@@ -68,6 +69,21 @@ export default function LabConfirm() {
   const companySession = getEmployeeCompanySession()
   const collectionType = state?.collectionType === "office" ? "Office Collection" : "Home Collection"
   const selectedTest = state?.selectedTest?.name ?? "Complete Blood Count (CBC)"
+  const readinessQuestions = state?.readinessQuestions ?? []
+
+  function buildPatientNotes() {
+    if (!readinessQuestions.length || !state?.readiness) return ""
+    return readinessQuestions
+      .map((question) => {
+        const answer = state.readiness?.[question.id]
+        if (!answer) return null
+        const answerLabel =
+          question.options.find((option) => option.value === answer)?.label ?? answer
+        return `Q: ${question.question} A: ${answerLabel}`
+      })
+      .filter(Boolean)
+      .join(" | ")
+  }
 
   useEffect(() => {
     let active = true
@@ -98,6 +114,7 @@ export default function LabConfirm() {
           time: state?.time,
           collection_type: collectionType,
           readiness: state?.readiness ?? {},
+          patient_notes: buildPatientNotes(),
         })
         const ref =
           (response?.providerReference as string | undefined) ??

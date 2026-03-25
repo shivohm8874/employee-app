@@ -26,6 +26,7 @@ export default function LabLocationStep2() {
   const { state } = useLocation() as {
     state?: {
       selectedTest?: LabTestItem
+      readinessQuestions?: Array<{ id: string; question: string; options: Array<{ value: string; label: string }> }>
       readiness?: Record<string, "yes" | "no">
     }
   }
@@ -496,6 +497,7 @@ export default function LabLocationStep2() {
                 selectedTest,
                 collectionType,
                 address: mapOriginAddress,
+                readinessQuestions: state?.readinessQuestions,
                 readiness: state?.readiness,
               },
             })

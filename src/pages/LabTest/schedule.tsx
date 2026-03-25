@@ -47,6 +47,7 @@ export default function LabScheduleLater() {
       selectedTest?: LabTestItem
       collectionType?: string
       address?: string
+      readinessQuestions?: Array<{ id: string; question: string; options: Array<{ value: string; label: string }> }>
       readiness?: Record<string, "yes" | "no">
     }
   }
@@ -144,6 +145,7 @@ export default function LabScheduleLater() {
                 address: state?.address,
                 date,
                 time,
+                readinessQuestions: state?.readinessQuestions,
                 readiness: state?.readiness,
               },
             })
