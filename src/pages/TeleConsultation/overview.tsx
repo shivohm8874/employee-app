@@ -189,6 +189,7 @@ export default function TeleOverview() {
                   teleconsultSessionId: booking.sessionId,
                   scheduledAt: booking.scheduledAt,
                   bookingId: booking.id,
+                  autoJoin: true,
                 },
               })
             }

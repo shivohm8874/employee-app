@@ -55,6 +55,7 @@ type TeleNavState = {
   bookingId?: string
   startRide?: boolean
   startVideo?: boolean
+  autoJoin?: boolean
 }
 
 type TeleBooking = {
@@ -254,6 +255,7 @@ export default function TeleConsultation() {
   const [scheduledAt, setScheduledAt] = useState<string | null>(null)
   const [bookingId, setBookingId] = useState<string | null>(null)
   const [joinReady, setJoinReady] = useState(true)
+  const [autoJoin, setAutoJoin] = useState(false)
   const [usingZegoTemplate, setUsingZegoTemplate] = useState(false)
   const [usingAgoraTemplate, setUsingAgoraTemplate] = useState(false)
   const [activeRtc, setActiveRtc] = useState<TeleconsultRtcPayload | null>(null)
@@ -456,6 +458,7 @@ export default function TeleConsultation() {
       setCallState("ready")
       setCallError("")
       setMediaError("")
+      setAutoJoin(Boolean(state.autoJoin))
       return
     }
     if (state.startRide) {
@@ -465,6 +468,13 @@ export default function TeleConsultation() {
       return
     }
   }, [location.state])
+
+  useEffect(() => {
+    if (!autoJoin || step !== "video" || !joinReady) return
+    if (callState !== "ready" || usingZegoTemplate || usingAgoraTemplate) return
+    setAutoJoin(false)
+    void bootstrapZegoTemplateCall(forceAgora ? "agora" : undefined)
+  }, [autoJoin, callState, forceAgora, joinReady, step, usingAgoraTemplate, usingZegoTemplate])
 
   useEffect(() => {
     if (step !== "options") return
